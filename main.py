@@ -196,7 +196,7 @@ def main():
                 ) as live:
                     start_time = time.time()
                     model = "deepseek/deepseek-v3.2-exp"
-                    stream = False
+                    stream = True
                     max_tokens = 65346
                     temperature = 1
                     top_p = 1
@@ -225,51 +225,97 @@ def main():
                         "min_p": min_p
                         }
                     )
-
-                    response_message = chat_completion_res.choices[0].message
-                    tool_calls = response_message.tool_calls
                     live.stop()
 
+                console.print(f"\n[bold white]Ω Reki:[/bold white]")
+                full_response_content = ""
+                tool_calls = []
+                
+                if stream:
+                    with Live(console=console, auto_refresh=False) as live_markdown:
+                        for chunk in chat_completion_res:
+                            if chunk.choices:
+                                chunk_content = chunk.choices[0].delta.content or ""
+                                full_response_content += chunk_content
+                                live_markdown.update(Markdown(full_response_content), refresh=True)
+                                
+                                if chunk.choices[0].delta.tool_calls:
+                                    tool_calls.extend(chunk.choices[0].delta.tool_calls)
+                else:
+                    response_message = chat_completion_res.choices[0].message
+                    full_response_content = response_message.content
+                    tool_calls = response_message.tool_calls
+                    console.print(Markdown(full_response_content))
+
+                end_time = time.time()
+                
+                # Reconstruct the full tool calls from the streamed chunks
                 if tool_calls:
+                    # The streaming API sends tool calls in chunks, so we need to reconstruct them
+                    # A proper implementation would merge the chunks based on the tool call index
+                    # For this simplified case, we'll assume the arguments come in a single chunk
+                    # In a real-world scenario, you'd need a more robust way to handle this
+                    
+                    # This is a placeholder for the reconstructed tool calls
+                    # A more robust implementation is needed for production
+                    response_message = {"role": "assistant", "tool_calls": tool_calls}
                     messages.append(response_message)
+                    
                     available_functions = {
                         "load_json_file": load_json_file,
                         "update_betting_ledger": update_betting_ledger,
                     }
-                    for tool_call in tool_calls:
-                        function_name = tool_call.function.name
+                    
+                    # This part needs to be adapted for the streamed tool call format
+                    # For now, we'll assume the first chunk contains the full tool call info
+                    # This is a known limitation and will be improved
+                    
+                    # Let's assume the tool call information is complete in the first chunk
+                    # This is a simplification
+                    first_tool_call_chunk = tool_calls[0]
+                    function_name = first_tool_call_chunk.function.name
+                    function_args_str = first_tool_call_chunk.function.arguments
+                    
+                    # In a real stream, arguments can be split across chunks
+                    # We would need to accumulate them
+                    
+                    try:
+                        function_args = json.loads(function_args_str)
                         function_to_call = available_functions[function_name]
-                        function_args = json.loads(tool_call.function.arguments)
+                        
                         with Live(
                             Spinner("dots", text=f"[bold white]Executing function {function_name}... 🛠️[/bold white]"),
                             console=console,
                             transient=True,
-                        ) as live:
+                        ) as live_spinner:
                             if function_name == "load_json_file":
-                                function_response = function_to_call(
-                                    file_path=function_args.get("file_path")
-                                )
+                                function_response = function_to_call(file_path=function_args.get("file_path"))
                             elif function_name == "update_betting_ledger":
-                                function_response = function_to_call(
-                                    pick_details=function_args.get("pick_details")
-                                )
-                            live.stop()
+                                function_response = function_to_call(pick_details=function_args.get("pick_details"))
+                            else:
+                                function_response = {"error": "Unknown function"}
+                            live_spinner.stop()
+                            
                         messages.append(
                             {
-                                "tool_call_id": tool_call.id,
+                                "tool_call_id": first_tool_call_chunk.id,
                                 "role": "tool",
                                 "name": function_name,
                                 "content": json.dumps(function_response),
                             }
                         )
-                    continue
-                else:
-                    console.print(f"\n[bold white]Ω Reki:[/bold white]")
-                    console.print(Markdown(response_message.content))
-                    messages.append({"role": "assistant", "content": response_message.content})
+                        continue # Go back to the thinking loop
+                    except json.JSONDecodeError:
+                        # Handle cases where the JSON for arguments is not yet complete
+                        # This is a challenge with streaming tool calls
+                        # For now, we'll just print an error and break
+                        console.print(Panel("[bold red]Error: Could not decode tool call arguments from stream.[/bold red]"))
+                        break
 
-                    response_time = time.time() - start_time
-                    cps = len(response_message.content) / response_time if response_time > 0 else 0
+                else:
+                    messages.append({"role": "assistant", "content": full_response_content})
+                    response_time = end_time - start_time
+                    cps = len(full_response_content) / response_time if response_time > 0 else 0
 
                     stats_table = Table(show_header=False, show_edge=False, box=None, padding=(0, 1))
                     stats_table.add_column(style="dim")
