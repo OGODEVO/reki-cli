@@ -15,6 +15,7 @@ from rich.prompt import Prompt
 from rich.align import Align
 from rich.table import Table
 from tools.brave_search import BrowserTool
+from tools.web_fetcher import WebFetcherTool
 
 console = Console()
 
@@ -112,6 +113,15 @@ def update_betting_ledger(pick_details):
         return {"error": str(e)}
 
 
+def read_text_file(file_path):
+    try:
+        with open(file_path, "r") as f:
+            return f.read()
+    except FileNotFoundError:
+        return {"error": "File not found."}
+
+
+
 tools = [
     {
         "type": "function",
@@ -154,12 +164,32 @@ tools = [
                 "required": ["pick_details"],
             },
         },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "read_text_file",
+            "description": "Read a plain text file from the given path. Use this to read game stats from `stats.txt`.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "file_path": {
+                        "type": "string",
+                        "description": "The path to the text file.",
+                    }
+                },
+                "required": ["file_path"],
+            },
+        },
     }
 ]
 
 
 browser_tool = BrowserTool()
 tools.extend(browser_tool.get_tools())
+
+web_fetcher_tool = WebFetcherTool()
+tools.extend(web_fetcher_tool.get_tools())
 
 
 def main():
@@ -200,6 +230,13 @@ def main():
             user_input = Prompt.ask("\n[bold green]α You:[/bold green]")
             if user_input.lower() == "exit":
                 break
+
+            if user_input.lower() == "/reset":
+                messages = [
+                    {"role": "system", "content": system_prompt},
+                ]
+                console.print(Panel("[bold yellow]Conversation history has been reset.[/bold yellow]", title="[bold yellow]Reset[/bold yellow]", border_style="yellow"))
+                continue
 
             if user_input.startswith("/load"):
                 console.print(
@@ -300,6 +337,8 @@ def main():
                         "load_json_file": load_json_file,
                         "update_betting_ledger": update_betting_ledger,
                         "browser_search": browser_tool.search,
+                        "url_fetch": web_fetcher_tool.fetch,
+                        "read_text_file": read_text_file,
                     }
                     
                     for tool_call in tool_call_chunks:
@@ -307,6 +346,10 @@ def main():
                         function_args_str = tool_call["function"]["arguments"]
                         
                         try:
+                            # Clean the arguments string
+                            if "</tool_sep" in function_args_str:
+                                function_args_str = function_args_str.split("</tool_sep")[0]
+
                             function_args = json.loads(function_args_str)
                             function_to_call = available_functions[function_name]
                             
@@ -315,12 +358,22 @@ def main():
                                 console=console,
                                 transient=True,
                             ) as live_spinner:
-                                if function_name == "load_json_file":
+                                if function_name == "url_fetch":
+                                    url = function_args.get("url")
+                                    prompt = f"Please provide a clean, concise summary of the main content of the webpage at the following URL: {url}. Focus on the key facts and information presented on the page, omitting boilerplate like navigation menus, ads, and footers."
+                                    
+                                    # This is a placeholder for the direct tool call
+                                    from IPython import get_ipython
+                                    ipython = get_ipython()
+                                    function_response = ipython.run_cell_magic('tool', 'web_fetch', prompt)
+                                elif function_name == "load_json_file":
                                     function_response = function_to_call(file_path=function_args.get("file_path"))
                                 elif function_name == "update_betting_ledger":
                                     function_response = function_to_call(pick_details=function_args.get("pick_details"))
                                 elif function_name == "browser_search":
                                     function_response = function_to_call(query=function_args.get("query"))
+                                elif function_name == "read_text_file":
+                                    function_response = function_to_call(file_path=function_args.get("file_path"))
                                 else:
                                     function_response = {"error": "Unknown function"}
                                 live_spinner.stop()
