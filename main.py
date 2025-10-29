@@ -1,6 +1,7 @@
 from datetime import datetime
 import os
 import time
+import json
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -60,6 +61,83 @@ def get_api_key():
         exit()
     return api_key
 
+
+def load_json_file(file_path):
+    try:
+        with open(file_path, "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {"error": "File not found."}
+    except json.JSONDecodeError:
+        return {"error": "Invalid JSON format."}
+
+
+def update_betting_ledger(pick_details):
+    try:
+        with open("betting_ledger.json", "r+") as f:
+            ledger = json.load(f)
+            ledger["picks"].append(pick_details)
+            
+            # Calculate the new stake based on the outcome
+            if pick_details.get("outcome") == "win":
+                ledger["current_stake"] += pick_details.get("profit", 0)
+            elif pick_details.get("outcome") == "loss":
+                ledger["current_stake"] -= pick_details.get("stake", 0)
+            
+            f.seek(0)
+            json.dump(ledger, f, indent=2)
+            f.truncate()
+            return {"status": "success", "new_stake": ledger["current_stake"]}
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        return {"error": str(e)}
+
+
+tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "load_json_file",
+            "description": "Load a JSON file from the given path. Use this to read game stats or the current betting ledger.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "file_path": {
+                        "type": "string",
+                        "description": "The path to the JSON file.",
+                    }
+                },
+                "required": ["file_path"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "update_betting_ledger",
+            "description": "Update the betting ledger with the result of a completed pick.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "pick_details": {
+                        "type": "object",
+                        "description": "An object containing the details of the pick.",
+                        "properties": {
+                            "game": {"type": "string", "description": "The game the pick was for."},
+                            "pick": {"type": "string", "description": "The pick that was made (e.g., 'OVER 210.5')."},
+                            "stake": {"type": "number", "description": "The amount staked on the pick."},
+                            "outcome": {"type": "string", "description": "The outcome of the pick ('win' or 'loss')."},
+                            "profit": {"type": "number", "description": "The profit from the pick (if it was a win)."}
+                        },
+                        "required": ["game", "pick", "stake", "outcome"],
+                    }
+                },
+                "required": ["pick_details"],
+            },
+        },
+    }
+]
+
+
 def main():
     load_dotenv()
     display_intro()
@@ -87,7 +165,7 @@ def main():
 
     chicago_tz = ZoneInfo("America/Chicago")
     current_date = datetime.now(chicago_tz).strftime("%A, %d %B %Y %I:%M:%S %p")
-    system_prompt = system_prompt_template.replace("{current_date}", current_.date)
+    system_prompt = system_prompt_template.replace("{current_date}", current_date)
 
     messages = [
         {"role": "system", "content": system_prompt},
@@ -95,73 +173,109 @@ def main():
 
     while True:
         try:
-            user_input = Prompt.ask("\n[bold cyan]You[/bold cyan]")
+            user_input = Prompt.ask("\n[bold green]α You:[/bold green]")
             if user_input.lower() == "exit":
                 break
 
-            messages.append({"role": "user", "content": user_input})
-
-            user_panel = Panel(
-                user_input,
-                title="[bold cyan]You[/bold cyan]",
-                border_style="bold cyan",
-                expand=False,
-                padding=(1, 2),
-            )
-            console.print(Align.left(user_panel))
-
-            with Live(
-                Spinner("dots", text="[bold magenta]Assistant:[/bold magenta] Thinking..."),
-                console=console,
-                transient=True,
-            ) as live:
-                model = "deepseek/deepseek-v3.2-exp"
-                stream = True
-                max_tokens = 65346
-                temperature = 1
-                top_p = 1
-                min_p = 0
-                top_k = 50
-                presence_penalty = 0
-                frequency_penalty = 0
-                repetition_penalty = 1
-                response_format = { "type": "text" }
-
-                chat_completion_res = client.chat.completions.create(
-                    model=model,
-                    messages=messages,
-                    stream=stream,
-                    max_tokens=max_tokens,
-                    temperature=temperature,
-                    top_p=top_p,
-                    presence_penalty=presence_penalty,
-                    frequency_penalty=frequency_penalty,
-                    response_format=response_format,
-                    extra_body={
-                      "top_k": top_k,
-                      "repetition_penalty": repetition_penalty,
-                      "min_p": min_p
-                    }
+            if user_input.startswith("/load"):
+                console.print(
+                    Panel(
+                        "[bold yellow]The /load command is deprecated. The AI will call tools for you.[/bold yellow]",
+                        title="[bold yellow]Deprecated Command[/bold yellow]",
+                        border_style="bold yellow",
+                    )
                 )
 
-                assistant_response = ""
-                if stream:
-                    for chunk in chat_completion_res:
-                        assistant_response += chunk.choices[0].delta.content or ""
+            messages.append({"role": "user", "content": user_input})
+
+            while True:
+                with Live(
+                    Spinner("dots", text="[bold white]Ω Reki:[/bold white] Thinking..."),
+                    console=console,
+                    transient=True,
+                ) as live:
+                    start_time = time.time()
+                    model = "deepseek/deepseek-v3.2-exp"
+                    stream = False
+                    max_tokens = 65346
+                    temperature = 1
+                    top_p = 1
+                    min_p = 0
+                    top_k = 50
+                    presence_penalty = 0
+                    frequency_penalty = 0
+                    repetition_penalty = 1
+                    response_format = { "type": "text" }
+
+                    chat_completion_res = client.chat.completions.create(
+                        model=model,
+                        messages=messages,
+                        tools=tools,
+                        tool_choice="auto",
+                        stream=stream,
+                        max_tokens=max_tokens,
+                        temperature=temperature,
+                        top_p=top_p,
+                        presence_penalty=presence_penalty,
+                        frequency_penalty=frequency_penalty,
+                        response_format=response_format,
+                        extra_body={
+                        "top_k": top_k,
+                        "repetition_penalty": repetition_penalty,
+                        "min_p": min_p
+                        }
+                    )
+
+                    response_message = chat_completion_res.choices[0].message
+                    tool_calls = response_message.tool_calls
+                    live.stop()
+
+                if tool_calls:
+                    messages.append(response_message)
+                    available_functions = {
+                        "load_json_file": load_json_file,
+                        "update_betting_ledger": update_betting_ledger,
+                    }
+                    for tool_call in tool_calls:
+                        function_name = tool_call.function.name
+                        function_to_call = available_functions[function_name]
+                        function_args = json.loads(tool_call.function.arguments)
+                        with Live(
+                            Spinner("dots", text=f"[bold white]Executing function {function_name}... 🛠️[/bold white]"),
+                            console=console,
+                            transient=True,
+                        ) as live:
+                            if function_name == "load_json_file":
+                                function_response = function_to_call(
+                                    file_path=function_args.get("file_path")
+                                )
+                            elif function_name == "update_betting_ledger":
+                                function_response = function_to_call(
+                                    pick_details=function_args.get("pick_details")
+                                )
+                            live.stop()
+                        messages.append(
+                            {
+                                "tool_call_id": tool_call.id,
+                                "role": "tool",
+                                "name": function_name,
+                                "content": json.dumps(function_response),
+                            }
+                        )
+                    continue
                 else:
-                    assistant_response = chat_completion_res.choices[0].message.content
+                    console.print(f"\n[bold white]Ω Reki:[/bold white]")
+                    console.print(Markdown(response_message.content))
+                    messages.append({"role": "assistant", "content": response_message.content})
 
-                messages.append({"role": "assistant", "content": assistant_response})
-                live.stop()
+                    response_time = time.time() - start_time
+                    cps = len(response_message.content) / response_time if response_time > 0 else 0
 
-            assistant_panel = Panel(
-                Markdown(assistant_response),
-                title="[bold magenta]Assistant[/bold magenta]",
-                border_style="bold magenta",
-                expand=False,
-                padding=(1, 2),
-            )
-            console.print(Align.right(assistant_panel))
+                    stats_table = Table(show_header=False, show_edge=False, box=None, padding=(0, 1))
+                    stats_table.add_column(style="dim")
+                    stats_table.add_row(f"Response Time: {response_time:.2f}s | CPS: {cps:.2f}")
+                    console.print(stats_table)
+                    break
 
         except KeyboardInterrupt:
             console.print("\n[bold red]Exiting chat.[/bold red]")

@@ -1,0 +1,9 @@
+{
+  "name": "Reki",
+  "version": "1.0",
+  "description": "A friendly AI assistant.",
+  "capabilities": [
+    "conversation",
+    "file_loading"
+  ]
+}
