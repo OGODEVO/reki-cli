@@ -1,107 +1,95 @@
 {
-  "game": "Geas San Sesto Giovanni vs KSC Szekszard",
-  "status": "3rd Quarter | 09:31",
-  "score": {
-    "SSG": 33,
-    "SZE": 34
-  },
-  "quarters": {
-    "1": {
-      "SSG": 24,
-      "SZE": 14
-    },
-    "2": {
-      "SSG": 9,
-      "SZE": 20
-    },
-    "3": {
-      "SSG": 0,
-      "SZE": 0
-    },
-    "4": {
-      "SSG": "-",
-      "SZE": "-"
-    }
-  },
-  "statistics": {
-    "field_goals": {
-      "SSG": "13/31 (41.9%)",
-      "SZE": "11/24 (45.8%)"
-    },
-    "three_points": {
-      "SSG": "2/11 (18.2%)",
-      "SZE": "2/4 (50%)"
-    },
-    "two_points": {
-      "SSG": "11/20 (55%)",
-      "SZE": "9/20 (45%)"
-    },
-    "free_throws": {
-      "SSG": "5/8 (62.5%)",
-      "SZE": "10/14 (71.4%)"
-    },
-    "fouls": {
-      "SSG": 15,
-      "SZE": 10
-    },
-    "timeouts": {
-      "SSG": 2,
-      "SZE": 2
-    },
-    "rebounds": {
-      "SSG": 15,
-      "SZE": 16
-    },
-    "max_points_in_a_row": {
-      "SSG": 10,
-      "SZE": 8
-    },
-    "biggest_lead": {
-      "SSG": 13,
-      "SZE": 1
-    }
-  },
-  "win_probability": {
-    "SSG": "56%",
-    "SZE": "44%"
-  },
-  "odds": {
-    "winner_incl_overtime": {
-      "SSG": 1.65,
-      "SZE": 2.15
-    },
-    "handicap_incl_overtime": {
-      "SSG": {
-        "-1.5": 1.75,
-        "-2.5": 1.90
+  "match": {
+    "players": [
+      {
+        "name": "Joao Fonseca",
+        "year_to_date": {
+          "rank": 28,
+          "move": 18,
+          "win_loss": "25-15",
+          "titles": 2,
+          "prize_money": "$1,705,781"
+        },
+        "career": {
+          "high_rank": 28,
+          "high_rank_date": "2025-10-27",
+          "win_loss": "36-23",
+          "titles": 2,
+          "total_prize_money": "$2,540,900"
+        },
+        "stats": {
+          "serve": {
+            "aces": 313,
+            "double_faults": 113,
+            "first_serve_percentage": "66%",
+            "first_serve_points_won": "71%",
+            "second_serve_points_won": "53%",
+            "break_points_faced": 302,
+            "break_points_saved": "60%",
+            "service_games_played": 673,
+            "service_games_won": "82%",
+            "total_service_points_won": "65%"
+          },
+          "return": {
+            "first_serve_return_points_won": "30%",
+            "second_serve_return_points_won": "49%",
+            "break_points_opportunities": 415,
+            "break_points_converted": "36%",
+            "return_games_played": 679,
+            "return_games_won": "22%",
+            "return_points_won": "37%",
+            "total_points_won": "51%"
+          }
+        }
       },
-      "SZE": {
-        "+1.5": 1.95,
-        "+2.5": 1.80
+      {
+        "name": "Karen Khachanov",
+        "stats": {
+          "serve": {
+            "aces": 4010,
+            "double_faults": 1313,
+            "first_serve_percentage": "63%",
+            "first_serve_points_won": "74%",
+            "second_serve_points_won": "52%",
+            "break_points_faced": 3254,
+            "break_points_saved": "63%",
+            "service_games_played": 6770,
+            "service_games_won": "82%",
+            "total_service_points_won": "66%"
+          },
+          "return": {
+            "first_serve_return_points_won": "28%",
+            "second_serve_return_points_won": "51%",
+            "break_points_opportunities": 3617,
+            "break_points_converted": "40%",
+            "return_games_played": 6779,
+            "return_games_won": "21%",
+            "return_points_won": "37%",
+            "total_points_won": "51%"
+          }
+        }
       }
-    },
-    "total_incl_overtime": {
-      "over": {
-        "134.5": 1.75,
-        "135.5": 1.85
+    ],
+    "odds": {
+      "winner": {
+        "Khachanov, Karen": 1.72,
+        "Fonseca, Joao": 2.14
       },
-      "under": {
-        "134.5": 2.00,
-        "135.5": 1.85
-      }
+      "first_set_winner": {
+        "Khachanov, Karen": 1.73,
+        "Fonseca, Joao": 2.03
+      },
+      "second_set_winner": {
+        "Khachanov, Karen": 1.74,
+        "Fonseca, Joao": 2.03
+      },
+      "total_games": [
+        { "line": 21.5, "over": 1.45, "under": 2.65 },
+        { "line": 22.5, "over": 1.68, "under": 2.11 },
+        { "line": 23.5, "over": 1.93, "under": 1.81 },
+        { "line": 24.5, "over": 1.96, "under": 1.78 },
+        { "line": 25.5, "over": 2.11, "under": 1.68 }
+      ]
     }
-  },
-  "head_to_head": {
-    "previous_meetings": {
-      "SSG_wins": 0,
-      "SZE_wins": 1
-    },
-    "average_points": {
-      "SSG_points_scored": 68.0,
-      "SZE_points_scored": 70.3,
-      "SSG_points_allowed": 64.7,
-      "SZE_points_allowed": 67.7
-    }
-  },
-  "next_match": true
+  }
 }

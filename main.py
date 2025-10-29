@@ -14,6 +14,7 @@ from rich.markdown import Markdown
 from rich.prompt import Prompt
 from rich.align import Align
 from rich.table import Table
+from tools.brave_search import BrowserTool
 
 console = Console()
 
@@ -157,6 +158,10 @@ tools = [
 ]
 
 
+browser_tool = BrowserTool()
+tools.extend(browser_tool.get_tools())
+
+
 def main():
     load_dotenv()
     display_intro()
@@ -294,6 +299,7 @@ def main():
                     available_functions = {
                         "load_json_file": load_json_file,
                         "update_betting_ledger": update_betting_ledger,
+                        "browser_search": browser_tool.search,
                     }
                     
                     for tool_call in tool_call_chunks:
@@ -313,6 +319,8 @@ def main():
                                     function_response = function_to_call(file_path=function_args.get("file_path"))
                                 elif function_name == "update_betting_ledger":
                                     function_response = function_to_call(pick_details=function_args.get("pick_details"))
+                                elif function_name == "browser_search":
+                                    function_response = function_to_call(query=function_args.get("query"))
                                 else:
                                     function_response = {"error": "Unknown function"}
                                 live_spinner.stop()

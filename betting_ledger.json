@@ -2,14 +2,14 @@
   "initial_stake": 137,
   "goal_min": 300,
   "goal_max": 350,
-  "current_stake": 175.43,
+  "current_stake": 88.96,
   "picks": [
     {
       "game": "Geas San Sesto Giovanni vs KSC Szekszard",
       "pick": "UNDER 136.5",
       "stake": 48.04,
-      "profit": 38.43,
-      "outcome": "win"
+      "profit": 0,
+      "outcome": "loss"
     }
   ]
 }
