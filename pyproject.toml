@@ -8,4 +8,5 @@ dependencies = [
     "rich",
     "openai",
     "python-dotenv",
+    "tiktoken",
 ]

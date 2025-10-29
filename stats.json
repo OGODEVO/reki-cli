@@ -1,9 +1,107 @@
 {
-  "name": "Reki",
-  "version": "1.0",
-  "description": "A friendly AI assistant.",
-  "capabilities": [
-    "conversation",
-    "file_loading"
-  ]
+  "game": "Geas San Sesto Giovanni vs KSC Szekszard",
+  "status": "3rd Quarter | 09:31",
+  "score": {
+    "SSG": 33,
+    "SZE": 34
+  },
+  "quarters": {
+    "1": {
+      "SSG": 24,
+      "SZE": 14
+    },
+    "2": {
+      "SSG": 9,
+      "SZE": 20
+    },
+    "3": {
+      "SSG": 0,
+      "SZE": 0
+    },
+    "4": {
+      "SSG": "-",
+      "SZE": "-"
+    }
+  },
+  "statistics": {
+    "field_goals": {
+      "SSG": "13/31 (41.9%)",
+      "SZE": "11/24 (45.8%)"
+    },
+    "three_points": {
+      "SSG": "2/11 (18.2%)",
+      "SZE": "2/4 (50%)"
+    },
+    "two_points": {
+      "SSG": "11/20 (55%)",
+      "SZE": "9/20 (45%)"
+    },
+    "free_throws": {
+      "SSG": "5/8 (62.5%)",
+      "SZE": "10/14 (71.4%)"
+    },
+    "fouls": {
+      "SSG": 15,
+      "SZE": 10
+    },
+    "timeouts": {
+      "SSG": 2,
+      "SZE": 2
+    },
+    "rebounds": {
+      "SSG": 15,
+      "SZE": 16
+    },
+    "max_points_in_a_row": {
+      "SSG": 10,
+      "SZE": 8
+    },
+    "biggest_lead": {
+      "SSG": 13,
+      "SZE": 1
+    }
+  },
+  "win_probability": {
+    "SSG": "56%",
+    "SZE": "44%"
+  },
+  "odds": {
+    "winner_incl_overtime": {
+      "SSG": 1.65,
+      "SZE": 2.15
+    },
+    "handicap_incl_overtime": {
+      "SSG": {
+        "-1.5": 1.75,
+        "-2.5": 1.90
+      },
+      "SZE": {
+        "+1.5": 1.95,
+        "+2.5": 1.80
+      }
+    },
+    "total_incl_overtime": {
+      "over": {
+        "134.5": 1.75,
+        "135.5": 1.85
+      },
+      "under": {
+        "134.5": 2.00,
+        "135.5": 1.85
+      }
+    }
+  },
+  "head_to_head": {
+    "previous_meetings": {
+      "SSG_wins": 0,
+      "SZE_wins": 1
+    },
+    "average_points": {
+      "SSG_points_scored": 68.0,
+      "SZE_points_scored": 70.3,
+      "SSG_points_allowed": 64.7,
+      "SZE_points_allowed": 67.7
+    }
+  },
+  "next_match": true
 }

@@ -3,6 +3,7 @@ import os
 import time
 import json
 from zoneinfo import ZoneInfo
+import tiktoken
 from dotenv import load_dotenv
 from openai import OpenAI
 from rich.console import Console
@@ -60,6 +61,24 @@ def get_api_key():
         )
         exit()
     return api_key
+
+
+def count_tokens(messages, model="gpt-4"):
+    """Return the number of tokens used by a list of messages."""
+    try:
+        encoding = tiktoken.encoding_for_model(model)
+    except KeyError:
+        print("Warning: model not found. Using cl100k_base encoding.")
+        encoding = tiktoken.get_encoding("cl100k_base")
+    
+    num_tokens = 0
+    for message in messages:
+        num_tokens += 4  # every message follows <|start|>{role/name}\n{content}<|end|>\n
+        for key, value in message.items():
+            if value:
+                num_tokens += len(encoding.encode(str(value)))
+    num_tokens += 3  # every reply is primed with <|start|>assistant<|message|>
+    return num_tokens
 
 
 def load_json_file(file_path):
@@ -189,6 +208,7 @@ def main():
             messages.append({"role": "user", "content": user_input})
 
             while True:
+                prompt_tokens = count_tokens(messages)
                 with Live(
                     Spinner("dots", text="[bold white]Ω Reki:[/bold white] Thinking..."),
                     console=console,
@@ -229,7 +249,7 @@ def main():
 
                 console.print(f"\n[bold white]Ω Reki:[/bold white]")
                 full_response_content = ""
-                tool_calls = []
+                tool_call_chunks = []
                 
                 if stream:
                     with Live(console=console, auto_refresh=False) as live_markdown:
@@ -240,25 +260,35 @@ def main():
                                 live_markdown.update(Markdown(full_response_content), refresh=True)
                                 
                                 if chunk.choices[0].delta.tool_calls:
-                                    tool_calls.extend(chunk.choices[0].delta.tool_calls)
+                                    for tool_call_chunk in chunk.choices[0].delta.tool_calls:
+                                        if len(tool_call_chunks) <= tool_call_chunk.index:
+                                            tool_call_chunks.append({"id": "", "type": "function", "function": {"name": "", "arguments": ""}})
+                                        
+                                        chunk_data = tool_call_chunks[tool_call_chunk.index]
+                                        if tool_call_chunk.id:
+                                            chunk_data["id"] = tool_call_chunk.id
+                                        if tool_call_chunk.function.name:
+                                            chunk_data["function"]["name"] = tool_call_chunk.function.name
+                                        if tool_call_chunk.function.arguments:
+                                            chunk_data["function"]["arguments"] += tool_call_chunk.function.arguments
                 else:
                     response_message = chat_completion_res.choices[0].message
                     full_response_content = response_message.content
-                    tool_calls = response_message.tool_calls
+                    if response_message.tool_calls:
+                        tool_call_chunks = [
+                            {
+                                "id": tc.id,
+                                "type": "function",
+                                "function": {"name": tc.function.name, "arguments": tc.function.arguments},
+                            }
+                            for tc in response_message.tool_calls
+                        ]
                     console.print(Markdown(full_response_content))
 
                 end_time = time.time()
                 
-                # Reconstruct the full tool calls from the streamed chunks
-                if tool_calls:
-                    # The streaming API sends tool calls in chunks, so we need to reconstruct them
-                    # A proper implementation would merge the chunks based on the tool call index
-                    # For this simplified case, we'll assume the arguments come in a single chunk
-                    # In a real-world scenario, you'd need a more robust way to handle this
-                    
-                    # This is a placeholder for the reconstructed tool calls
-                    # A more robust implementation is needed for production
-                    response_message = {"role": "assistant", "tool_calls": tool_calls}
+                if tool_call_chunks:
+                    response_message = {"role": "assistant", "tool_calls": tool_call_chunks}
                     messages.append(response_message)
                     
                     available_functions = {
@@ -266,60 +296,51 @@ def main():
                         "update_betting_ledger": update_betting_ledger,
                     }
                     
-                    # This part needs to be adapted for the streamed tool call format
-                    # For now, we'll assume the first chunk contains the full tool call info
-                    # This is a known limitation and will be improved
-                    
-                    # Let's assume the tool call information is complete in the first chunk
-                    # This is a simplification
-                    first_tool_call_chunk = tool_calls[0]
-                    function_name = first_tool_call_chunk.function.name
-                    function_args_str = first_tool_call_chunk.function.arguments
-                    
-                    # In a real stream, arguments can be split across chunks
-                    # We would need to accumulate them
-                    
-                    try:
-                        function_args = json.loads(function_args_str)
-                        function_to_call = available_functions[function_name]
+                    for tool_call in tool_call_chunks:
+                        function_name = tool_call["function"]["name"]
+                        function_args_str = tool_call["function"]["arguments"]
                         
-                        with Live(
-                            Spinner("dots", text=f"[bold white]Executing function {function_name}... 🛠️[/bold white]"),
-                            console=console,
-                            transient=True,
-                        ) as live_spinner:
-                            if function_name == "load_json_file":
-                                function_response = function_to_call(file_path=function_args.get("file_path"))
-                            elif function_name == "update_betting_ledger":
-                                function_response = function_to_call(pick_details=function_args.get("pick_details"))
-                            else:
-                                function_response = {"error": "Unknown function"}
-                            live_spinner.stop()
+                        try:
+                            function_args = json.loads(function_args_str)
+                            function_to_call = available_functions[function_name]
                             
-                        messages.append(
-                            {
-                                "tool_call_id": first_tool_call_chunk.id,
-                                "role": "tool",
-                                "name": function_name,
-                                "content": json.dumps(function_response),
-                            }
-                        )
-                        continue # Go back to the thinking loop
-                    except json.JSONDecodeError:
-                        # Handle cases where the JSON for arguments is not yet complete
-                        # This is a challenge with streaming tool calls
-                        # For now, we'll just print an error and break
-                        console.print(Panel("[bold red]Error: Could not decode tool call arguments from stream.[/bold red]"))
-                        break
+                            with Live(
+                                Spinner("dots", text=f"[bold white]Executing function {function_name}... 🛠️[/bold white]"),
+                                console=console,
+                                transient=True,
+                            ) as live_spinner:
+                                if function_name == "load_json_file":
+                                    function_response = function_to_call(file_path=function_args.get("file_path"))
+                                elif function_name == "update_betting_ledger":
+                                    function_response = function_to_call(pick_details=function_args.get("pick_details"))
+                                else:
+                                    function_response = {"error": "Unknown function"}
+                                live_spinner.stop()
+                                
+                            messages.append(
+                                {
+                                    "tool_call_id": tool_call["id"],
+                                    "role": "tool",
+                                    "name": function_name,
+                                    "content": json.dumps(function_response),
+                                }
+                            )
+                        except json.JSONDecodeError:
+                            console.print(Panel(f"[bold red]Error: Could not decode tool call arguments for {function_name}: {function_args_str}[/bold red]"))
+                            break
+                    continue
 
                 else:
                     messages.append({"role": "assistant", "content": full_response_content})
+                    completion_tokens = count_tokens([{"role": "assistant", "content": full_response_content}])
+                    total_tokens = prompt_tokens + completion_tokens
+                    
                     response_time = end_time - start_time
                     cps = len(full_response_content) / response_time if response_time > 0 else 0
 
                     stats_table = Table(show_header=False, show_edge=False, box=None, padding=(0, 1))
                     stats_table.add_column(style="dim")
-                    stats_table.add_row(f"Response Time: {response_time:.2f}s | CPS: {cps:.2f}")
+                    stats_table.add_row(f"Response Time: {response_time:.2f}s | CPS: {cps:.2f} | Prompt: {prompt_tokens} tokens | Completion: {completion_tokens} tokens | Total: {total_tokens} tokens")
                     console.print(stats_table)
                     break
 
