@@ -1,0 +1,95 @@
+{
+  "match": {
+    "players": [
+      {
+        "name": "Joao Fonseca",
+        "year_to_date": {
+          "rank": 28,
+          "move": 18,
+          "win_loss": "25-15",
+          "titles": 2,
+          "prize_money": "$1,705,781"
+        },
+        "career": {
+          "high_rank": 28,
+          "high_rank_date": "2025-10-27",
+          "win_loss": "36-23",
+          "titles": 2,
+          "total_prize_money": "$2,540,900"
+        },
+        "stats": {
+          "serve": {
+            "aces": 313,
+            "double_faults": 113,
+            "first_serve_percentage": "66%",
+            "first_serve_points_won": "71%",
+            "second_serve_points_won": "53%",
+            "break_points_faced": 302,
+            "break_points_saved": "60%",
+            "service_games_played": 673,
+            "service_games_won": "82%",
+            "total_service_points_won": "65%"
+          },
+          "return": {
+            "first_serve_return_points_won": "30%",
+            "second_serve_return_points_won": "49%",
+            "break_points_opportunities": 415,
+            "break_points_converted": "36%",
+            "return_games_played": 679,
+            "return_games_won": "22%",
+            "return_points_won": "37%",
+            "total_points_won": "51%"
+          }
+        }
+      },
+      {
+        "name": "Karen Khachanov",
+        "stats": {
+          "serve": {
+            "aces": 4010,
+            "double_faults": 1313,
+            "first_serve_percentage": "63%",
+            "first_serve_points_won": "74%",
+            "second_serve_points_won": "52%",
+            "break_points_faced": 3254,
+            "break_points_saved": "63%",
+            "service_games_played": 6770,
+            "service_games_won": "82%",
+            "total_service_points_won": "66%"
+          },
+          "return": {
+            "first_serve_return_points_won": "28%",
+            "second_serve_return_points_won": "51%",
+            "break_points_opportunities": 3617,
+            "break_points_converted": "40%",
+            "return_games_played": 6779,
+            "return_games_won": "21%",
+            "return_points_won": "37%",
+            "total_points_won": "51%"
+          }
+        }
+      }
+    ],
+    "odds": {
+      "winner": {
+        "Khachanov, Karen": 1.72,
+        "Fonseca, Joao": 2.14
+      },
+      "first_set_winner": {
+        "Khachanov, Karen": 1.73,
+        "Fonseca, Joao": 2.03
+      },
+      "second_set_winner": {
+        "Khachanov, Karen": 1.74,
+        "Fonseca, Joao": 2.03
+      },
+      "total_games": [
+        { "line": 21.5, "over": 1.45, "under": 2.65 },
+        { "line": 22.5, "over": 1.68, "under": 2.11 },
+        { "line": 23.5, "over": 1.93, "under": 1.81 },
+        { "line": 24.5, "over": 1.96, "under": 1.78 },
+        { "line": 25.5, "over": 2.11, "under": 1.68 }
+      ]
+    }
+  }
+}
