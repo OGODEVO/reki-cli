@@ -1,6 +1,7 @@
 from datetime import datetime
 import os
 import time
+from zoneinfo import ZoneInfo
 from openai import OpenAI
 from rich.console import Console
 from rich.panel import Panel
@@ -29,7 +30,8 @@ def display_intro():
     with Live(console=console, refresh_per_second=12, transient=True) as live:
         start_time = time.time()
         while time.time() - start_time < 1.5:
-            current_time = datetime.now().strftime("%H:%M:%S")
+            chicago_tz = ZoneInfo("America/Chicago")
+            current_time = datetime.now(chicago_tz).strftime("%H:%M:%S")
             
             subtitle_table = Table.grid()
             subtitle_table.add_column(justify="right")
@@ -82,7 +84,8 @@ def main():
         )
         exit()
 
-    current_date = datetime.now().strftime("%A, %d %B %Y %I:%M:%S %p")
+    chicago_tz = ZoneInfo("America/Chicago")
+    current_date = datetime.now(chicago_tz).strftime("%A, %d %B %Y %I:%M:%S %p")
     system_prompt = system_prompt_template.replace("{current_date}", current_date)
 
     messages = [
