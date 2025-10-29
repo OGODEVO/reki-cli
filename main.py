@@ -2,6 +2,7 @@ from datetime import datetime
 import os
 import time
 from zoneinfo import ZoneInfo
+from dotenv import load_dotenv
 from openai import OpenAI
 from rich.console import Console
 from rich.panel import Panel
@@ -49,10 +50,9 @@ def get_api_key():
     if not api_key:
         console.print(
             Panel(
-                "[bold red]Error: NOVITA_API_KEY environment variable not set.[/bold red]\n\n"
-                "Please set the environment variable and try again.\n\n"
-                "Example:\n"
-                "[bold cyan]export NOVITA_API_KEY='your-api-key'[/bold cyan]",
+                "[bold red]Error: NOVITA_API_KEY not found.[/bold red]\n\n"
+                "Please create a '.env' file in the same directory as the script and add the following line:\n\n"
+                "[bold cyan]NOVITA_API_KEY='your-api-key'[/bold cyan]",
                 title="[bold red]Configuration Error[/bold red]",
                 border_style="bold red",
             )
@@ -61,6 +61,7 @@ def get_api_key():
     return api_key
 
 def main():
+    load_dotenv()
     display_intro()
     api_key = get_api_key()
     client = OpenAI(
@@ -86,7 +87,7 @@ def main():
 
     chicago_tz = ZoneInfo("America/Chicago")
     current_date = datetime.now(chicago_tz).strftime("%A, %d %B %Y %I:%M:%S %p")
-    system_prompt = system_prompt_template.replace("{current_date}", current_date)
+    system_prompt = system_prompt_template.replace("{current_date}", current_.date)
 
     messages = [
         {"role": "system", "content": system_prompt},
