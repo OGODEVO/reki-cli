@@ -43,14 +43,14 @@ def display_intro():
             time.sleep(0.1)
 
 def get_api_key():
-    api_key = os.environ.get("OPENAI_API_KEY")
+    api_key = os.environ.get("NOVITA_API_KEY")
     if not api_key:
         console.print(
             Panel(
-                "[bold red]Error: OPENAI_API_KEY environment variable not set.[/bold red]\n\n"
+                "[bold red]Error: NOVITA_API_KEY environment variable not set.[/bold red]\n\n"
                 "Please set the environment variable and try again.\n\n"
                 "Example:\n"
-                "[bold cyan]export OPENAI_API_KEY='your-api-key'[/bold cyan]",
+                "[bold cyan]export NOVITA_API_KEY='your-api-key'[/bold cyan]",
                 title="[bold red]Configuration Error[/bold red]",
                 border_style="bold red",
             )
@@ -61,12 +61,32 @@ def get_api_key():
 def main():
     display_intro()
     api_key = get_api_key()
-    client = OpenAI(api_key=api_key)
+    client = OpenAI(
+        base_url="https://api.novita.ai/openai",
+        api_key=api_key
+    )
 
     console.print("\nType 'exit' or press Ctrl+C to end the chat.")
 
+    try:
+        with open("system_prompt.txt", "r") as f:
+            system_prompt_template = f.read()
+    except FileNotFoundError:
+        console.print(
+            Panel(
+                "[bold red]Error: system_prompt.txt not found.[/bold red]\n\n"
+                "Please create this file and add the system prompt template.",
+                title="[bold red]Configuration Error[/bold red]",
+                border_style="bold red",
+            )
+        )
+        exit()
+
+    current_date = datetime.now().strftime("%A, %d %B %Y %I:%M:%S %p")
+    system_prompt = system_prompt_template.replace("{current_date}", current_date)
+
     messages = [
-        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "system", "content": system_prompt},
     ]
 
     while True:
@@ -91,11 +111,42 @@ def main():
                 console=console,
                 transient=True,
             ) as live:
-                response = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
+                model = "deepseek/deepseek-v3.2-exp"
+                stream = True
+                max_tokens = 65346
+                temperature = 1
+                top_p = 1
+                min_p = 0
+                top_k = 50
+                presence_penalty = 0
+                frequency_penalty = 0
+                repetition_penalty = 1
+                response_format = { "type": "text" }
+
+                chat_completion_res = client.chat.completions.create(
+                    model=model,
                     messages=messages,
+                    stream=stream,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    top_p=top_p,
+                    presence_penalty=presence_penalty,
+                    frequency_penalty=frequency_penalty,
+                    response_format=response_format,
+                    extra_body={
+                      "top_k": top_k,
+                      "repetition_penalty": repetition_penalty,
+                      "min_p": min_p
+                    }
                 )
-                assistant_response = response.choices[0].message.content
+
+                assistant_response = ""
+                if stream:
+                    for chunk in chat_completion_res:
+                        assistant_response += chunk.choices[0].delta.content or ""
+                else:
+                    assistant_response = chat_completion_res.choices[0].message.content
+
                 messages.append({"role": "assistant", "content": assistant_response})
                 live.stop()
 

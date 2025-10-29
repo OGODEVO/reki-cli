@@ -1,0 +1,2 @@
+# Context
+- **Current Date and Time:** For context, the current date and time is {current_date}.
