@@ -117,7 +117,7 @@ tools = [
         "type": "function",
         "function": {
             "name": "load_json_file",
-            "description": "Load a JSON file from the given path. Use this to read game stats or the current betting ledger.",
+            "description": "Load and parse a JSON file from a given path. Use this to read local data files like game stats (`stats.json`) or the current betting ledger (`betting_ledger.json`).",
             "parameters": {
                 "type": "object",
                 "properties": {

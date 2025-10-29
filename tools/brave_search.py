@@ -52,7 +52,7 @@ class BrowserTool:
                 "type": "function",
                 "function": {
                     "name": "browser_search",
-                    "description": "Performs a web search using the Brave Search API and returns the search results.",
+                    "description": "Performs a web search using the Brave Search API to find up-to-date information on sports games, player stats, or any other relevant topic. Returns a list of search results.",
                     "parameters": {
                         "type": "object",
                         "properties": {
