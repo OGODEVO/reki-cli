@@ -1,0 +1,8 @@
+README.md
+main.py
+pyproject.toml
+terminal2.egg-info/PKG-INFO
+terminal2.egg-info/SOURCES.txt
+terminal2.egg-info/dependency_links.txt
+terminal2.egg-info/requires.txt
+terminal2.egg-info/top_level.txt

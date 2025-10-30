@@ -1,0 +1,5 @@
+rich
+openai
+python-dotenv
+tiktoken
+requests

@@ -28,7 +28,8 @@ class ChatAgent:
     def __init__(self, api_key, mem0_api_key, user_id, system_prompt):
         self.client = OpenAI(base_url="https://api.novita.ai/openai", api_key=api_key)
         self.mem0_helper = Mem0Helper(api_key=mem0_api_key, user_id=user_id)
-        self.messages = [{"role": "system", "content": system_prompt}]
+        self.original_system_prompt = system_prompt
+        self.messages = [] # Messages will be constructed dynamically
         
         self.browser_tool = BrowserTool()
         self.web_fetcher_tool = WebFetcherTool()
@@ -48,9 +49,36 @@ class ChatAgent:
             "url_fetch": self.web_fetcher_tool.fetch,
         }
 
+    def _get_memory_context(self, user_input):
+        """
+        Retrieves user and agent memories to build a dynamic context.
+        """
+        user_memories = self.mem0_helper.search(user_input, limit=5)
+        agent_memories = self.mem0_helper.search_agent_memory("personality, communication style", limit=2)
+
+        context = ""
+        if user_memories and user_memories.get("results"):
+            context += "\n\n--- User Memories ---\n"
+            context += "\n".join([m["memory"] for m in user_memories["results"]])
+        
+        if agent_memories and agent_memories.get("results"):
+            context += "\n\n--- Agent Style Guide ---\n"
+            context += "\n".join([m["memory"] for m in agent_memories["results"]])
+            
+        return context
+
     def get_response(self, user_input):
+        # 1. Get memory context
+        memory_context = self._get_memory_context(user_input)
+        
+        # 2. Construct dynamic system prompt
+        dynamic_system_prompt = f"{self.original_system_prompt}\n{memory_context}"
+        
+        # 3. Reconstruct messages for this turn
+        # We keep the last few messages for short-term context, plus the new dynamic prompt
+        short_term_history = self.messages[-4:] # Keep last 2 turns
+        self.messages = [{"role": "system", "content": dynamic_system_prompt}] + short_term_history
         self.messages.append({"role": "user", "content": user_input})
-        self.mem0_helper.add(user_input)
 
         while True:
             chat_completion_res = self.client.chat.completions.create(
@@ -77,6 +105,12 @@ class ChatAgent:
                             if tool_call_chunk.function.name: chunk_data["function"]["name"] = tool_call_chunk.function.name
                             if tool_call_chunk.function.arguments: chunk_data["function"]["arguments"] += tool_call_chunk.function.arguments
             
+            # 4. Add the exchange to memory *after* the response is complete
+            self.mem0_helper.add([
+                {"role": "user", "content": user_input},
+                {"role": "assistant", "content": full_response_content}
+            ])
+
             if tool_call_chunks:
                 self.messages.append({"role": "assistant", "tool_calls": tool_call_chunks})
                 
@@ -109,5 +143,4 @@ class ChatAgent:
                 continue
             else:
                 self.messages.append({"role": "assistant", "content": full_response_content})
-                self.mem0_helper.add(full_response_content)
                 break
