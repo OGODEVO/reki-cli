@@ -24,40 +24,6 @@ def count_tokens(messages, model="gpt-4"):
     num_tokens += 3
     return num_tokens
 
-def load_json_file(file_path):
-    try:
-        with open(file_path, "r") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return {"error": "File not found."}
-    except json.JSONDecodeError:
-        return {"error": "Invalid JSON format."}
-
-def update_betting_ledger(pick_details):
-    try:
-        with open("betting_ledger.json", "r+") as f:
-            ledger = json.load(f)
-            ledger["picks"].append(pick_details)
-            
-            if pick_details.get("outcome") == "win":
-                ledger["current_stake"] += pick_details.get("profit", 0)
-            elif pick_details.get("outcome") == "loss":
-                ledger["current_stake"] -= pick_details.get("stake", 0)
-            
-            f.seek(0)
-            json.dump(ledger, f, indent=2)
-            f.truncate()
-            return {"status": "success", "new_stake": ledger["current_stake"]}
-    except (FileNotFoundError, json.JSONDecodeError) as e:
-        return {"error": str(e)}
-
-def read_text_file(file_path):
-    try:
-        with open(file_path, "r") as f:
-            return f.read()
-    except FileNotFoundError:
-        return {"error": "File not found."}
-
 class ChatAgent:
     def __init__(self, api_key, mem0_api_key, user_id, system_prompt):
         self.client = OpenAI(base_url="https://api.novita.ai/openai", api_key=api_key)
@@ -71,20 +37,13 @@ class ChatAgent:
         self.available_functions = self._setup_available_functions()
 
     def _setup_tools(self):
-        tools = [
-            {"type": "function", "function": {"name": "load_json_file", "description": "Load and parse a JSON file from a given path.", "parameters": {"type": "object", "properties": {"file_path": {"type": "string", "description": "The path to the JSON file."}}, "required": ["file_path"]}}},
-            {"type": "function", "function": {"name": "update_betting_ledger", "description": "Update the betting ledger with the result of a completed pick.", "parameters": {"type": "object", "properties": {"pick_details": {"type": "object", "description": "An object containing the details of the pick.", "properties": {"game": {"type": "string"}, "pick": {"type": "string"}, "stake": {"type": "number"}, "outcome": {"type": "string", "enum": ["win", "loss"]}, "profit": {"type": "number"}}, "required": ["game", "pick", "stake", "outcome"]}}, "required": ["pick_details"]}}},
-            {"type": "function", "function": {"name": "read_text_file", "description": "Read a plain text file from the given path.", "parameters": {"type": "object", "properties": {"file_path": {"type": "string", "description": "The path to the text file."}}, "required": ["file_path"]}}}
-        ]
+        tools = []
         tools.extend(self.browser_tool.get_tools())
         tools.extend(self.web_fetcher_tool.get_tools())
         return tools
 
     def _setup_available_functions(self):
         return {
-            "load_json_file": load_json_file,
-            "update_betting_ledger": update_betting_ledger,
-            "read_text_file": read_text_file,
             "browser_search": self.browser_tool.search,
             "url_fetch": self.web_fetcher_tool.fetch,
         }
