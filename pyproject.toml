@@ -10,4 +10,5 @@ dependencies = [
     "python-dotenv",
     "tiktoken",
     "requests",
+    "mem0ai",
 ]

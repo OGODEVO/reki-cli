@@ -16,6 +16,7 @@ from rich.align import Align
 from rich.table import Table
 from tools.brave_search import BrowserTool
 from tools.web_fetcher import WebFetcherTool
+from mem0 import MemoryClient
 
 console = Console()
 
@@ -51,6 +52,8 @@ def display_intro():
 
 def get_api_key():
     api_key = os.environ.get("NOVITA_API_KEY")
+    mem0_api_key = os.environ.get("MEM0_API_KEY")
+    user_id = os.environ.get("USER_ID", "default_user")
     if not api_key:
         console.print(
             Panel(
@@ -62,7 +65,18 @@ def get_api_key():
             )
         )
         exit()
-    return api_key
+    if not mem0_api_key:
+        console.print(
+            Panel(
+                "[bold red]Error: MEM0_API_KEY not found.[/bold red]\n\n"
+                "Please add the following line to your '.env' file:\n\n"
+                "[bold cyan]MEM0_API_KEY='your-mem0-api-key'[/bold cyan]",
+                title="[bold red]Configuration Error[/bold red]",
+                border_style="bold red",
+            )
+        )
+        exit()
+    return api_key, mem0_api_key, user_id
 
 
 def count_tokens(messages, model="gpt-4"):
@@ -195,11 +209,12 @@ tools.extend(web_fetcher_tool.get_tools())
 def main():
     load_dotenv()
     display_intro()
-    api_key = get_api_key()
+    api_key, mem0_api_key, user_id = get_api_key()
     client = OpenAI(
         base_url="https://api.novita.ai/openai",
         api_key=api_key
     )
+    mem0_client = MemoryClient(api_key=mem0_api_key)
 
     console.print("\nType 'exit' or press Ctrl+C to end the chat.")
 
@@ -248,6 +263,7 @@ def main():
                 )
 
             messages.append({"role": "user", "content": user_input})
+            mem0_client.add(user_input, user_id=user_id)
 
             while True:
                 prompt_tokens = count_tokens(messages)
@@ -393,6 +409,7 @@ def main():
 
                 else:
                     messages.append({"role": "assistant", "content": full_response_content})
+                    mem0_client.add(full_response_content, user_id=user_id)
                     completion_tokens = count_tokens([{"role": "assistant", "content": full_response_content}])
                     total_tokens = prompt_tokens + completion_tokens
                     
