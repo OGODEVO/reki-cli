@@ -75,7 +75,7 @@ def count_tokens(messages, model="gpt-4"):
     
     num_tokens = 0
     for message in messages:
-        num_tokens += 4  # every message follows <|start|>{role/name}\n{content}<|end|>\n
+        num_tokens += 4  # every message follows <|start|>{role/name}\n{content}<|end|>
         for key, value in message.items():
             if value:
                 num_tokens += len(encoding.encode(str(value)))
@@ -154,7 +154,7 @@ tools = [
                         "properties": {
                             "game": {"type": "string", "description": "The game the pick was for."},
                             "pick": {"type": "string", "description": "The pick that was made (e.g., 'OVER 210.5')."},
-                            "stake": {"type": "number", "description": "The amount staked on the pick."},
+                            "stake": {"type": "number", "description": "The amount staked on the pick."}, 
                             "outcome": {"type": "string", "description": "The outcome of the pick ('win' or 'loss')."},
                             "profit": {"type": "number", "description": "The profit from the pick (if it was a win)."}
                         },
@@ -414,4 +414,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
