@@ -1,8 +1,13 @@
-from datetime import datetime
 import os
+import sys
 import time
+from datetime import datetime
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
+
+# Add the project root to the Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from agent import ChatAgent, count_tokens
 from ui import TerminalUI
 
@@ -23,10 +28,13 @@ def main():
         exit()
 
     try:
-        with open("system_prompt.txt", "r") as f:
+        # Construct the path to system_prompt.txt relative to this file
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        prompt_path = os.path.join(script_dir, "system_prompt.txt")
+        with open(prompt_path, "r") as f:
             system_prompt_template = f.read()
     except FileNotFoundError:
-        ui.display_error("system_prompt.txt not found.")
+        ui.display_error("system_prompt.txt not found in the 'reki' directory.")
         exit()
 
     chicago_tz = ZoneInfo("America/Chicago")
