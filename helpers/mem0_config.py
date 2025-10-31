@@ -1,41 +1,37 @@
 # Configuration for Mem0 project setup
 
-# Custom instructions to filter what gets stored in memory.
-# This helps in keeping the memory clean and relevant.
+# Custom instructions to filter what gets stored in memory for the FX Trading Analyst.
 CUSTOM_INSTRUCTIONS = """
 Extract from conversations with the user:
-- Key goals, objectives, and tasks the user mentions.
-- User's explicit preferences for interaction style, topics, or formats.
-- Important facts about the user (e.g., their projects, interests, constraints).
-- Milestones and progress updates related to their goals.
+- Specific currency pairs the user is interested in (e.g., EUR/USD, GBP/JPY).
+- The user's trading strategies, risk tolerance, or portfolio goals.
+- Key levels of support or resistance the user has identified.
+- User's preferences for specific technical indicators or timeframes.
+- Summaries of analysis performed on currency pairs.
 
 Exclude:
-- Greetings, farewells, and conversational filler (e.g., "hello", "thanks", "lol").
+- Greetings, farewells, and conversational filler (e.g., "hello", "thanks").
 - Casual, non-substantive chatter.
-- Hypothetical scenarios unless they are part of a planning process.
+- Any discussion not related to Forex, financial markets, or trading.
+- Standalone price points without context.
 """
 
-# Custom categories to organize memories.
-# This allows for more targeted retrieval of information.
+# Custom categories to organize memories for FX trading.
 CUSTOM_CATEGORIES = [
     {
-        "name": "goals",
-        "description": "User's long-term or short-term objectives, race targets, and training goals."
+        "name": "currency_pairs",
+        "description": "Specific currency pairs that the user is actively trading or monitoring."
     },
     {
-        "name": "constraints",
-        "description": "User's limitations, injuries, recovery needs, or any other constraints."
+        "name": "trading_strategy",
+        "description": "The user's defined trading plans, rules, risk management, and overall strategy."
     },
     {
-        "name": "preferences",
-        "description": "User's training style, communication preferences, content formats, schedules, etc."
+        "name": "market_analysis",
+        "description": "Key insights, conclusions, or summaries from technical analysis performed on currency pairs."
     },
     {
-        "name": "progress",
-        "description": "Updates on the user's progress towards their goals."
-    },
-    {
-        "name": "gambling_decisions",
-        "description": "Memories related to gambling, including past bets, choices, and their impact on the bankroll. Used to inform future betting suggestions."
+        "name": "user_preferences",
+        "description": "The user's preferences for indicators, timeframes, or reporting styles."
     }
 ]

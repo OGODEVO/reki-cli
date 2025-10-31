@@ -39,6 +39,7 @@ class ChatAgent:
         self.messages = [] # Messages will be constructed dynamically
         self.analysis_cache = {} # Cache for the current turn's analysis
         self.tool_emojis = ["📈", "💰", "📊", "💹"]
+        self.current_stage = 0 # Add this line to initialize the stage
         
         self.browser_tool = BrowserTool()
         self.web_fetcher_tool = WebFetcherTool()
@@ -95,10 +96,10 @@ class ChatAgent:
             
         return context
 
-    def get_response(self, user_input):
-        # 0. Clear the cache for the new turn
-        self.analysis_cache = {}
+    def _get_current_stage(self):
+        return self.current_stage
 
+    def get_response(self, user_input):
         # 1. Get memory context
         memory_context = self._get_memory_context(user_input)
         
@@ -107,9 +108,84 @@ class ChatAgent:
         
         # 3. Reconstruct messages for this turn
         # We keep the last few messages for short-term context, plus the new dynamic prompt
-        short_term_history = self.messages[-4:] # Keep last 2 turns
+        short_term_history = self.messages[-10:] # Keep last 5 turns
         self.messages = [{"role": "system", "content": dynamic_system_prompt}] + short_term_history
         self.messages.append({"role": "user", "content": user_input})
+
+        # Stage-based logic
+        if self.current_stage == 0:
+            # Start of the analysis, call get_market_status
+            self.messages.append({
+                "role": "assistant",
+                "content": "Starting the analysis. First, let's check the market status.",
+                "tool_calls": [{
+                    "id": "call_market_status",
+                    "type": "function",
+                    "function": {
+                        "name": "get_market_status",
+                        "arguments": "{}"
+                    }
+                }]
+            })
+            self.current_stage = 1
+        elif self.current_stage == 1:
+            # Market status checked, now do trend analysis
+            self.messages.append({
+                "role": "assistant",
+                "content": "Market is open. Now, let's proceed with Trend Analysis.",
+                "tool_calls": [
+                    {
+                        "id": "call_sma_indicator",
+                        "type": "function",
+                        "function": {
+                            "name": "get_sma_indicator",
+                            "arguments": "{\"instrument\": \"AUD/CAD\", \"period\": 50}"
+                        }
+                    },
+                    {
+                        "id": "call_ema_indicator",
+                        "type": "function",
+                        "function": {
+                            "name": "get_ema_indicator",
+                            "arguments": "{\"instrument\": \"AUD/CAD\", \"period\": 20}"
+                        }
+                    }
+                ]
+            })
+            self.current_stage = 2
+        elif self.current_stage == 2:
+            # Trend analysis done, now do momentum analysis
+            self.messages.append({
+                "role": "assistant",
+                "content": "Trend Analysis complete. Now, let's proceed with Momentum Analysis.",
+                "tool_calls": [{
+                    "id": "call_macd_indicator",
+                    "type": "function",
+                    "function": {
+                        "name": "get_macd_indicator",
+                        "arguments": "{\"instrument\": \"AUD/CAD\"}"
+                    }
+                }]
+            })
+            self.current_stage = 3
+        elif self.current_stage == 3:
+            # Momentum analysis done, now do overbought/oversold analysis
+            self.messages.append({
+                "role": "assistant",
+                "content": "Momentum Analysis complete. Now, let's proceed with Overbought/Oversold Analysis.",
+                "tool_calls": [{
+                    "id": "call_rsi_indicator",
+                    "type": "function",
+                    "function": {
+                        "name": "get_rsi_indicator",
+                        "arguments": "{\"instrument\": \"AUD/CAD\"}"
+                    }
+                }]
+            })
+            self.current_stage = 4
+        else:
+            # All stages are done, reset the stage
+            self.current_stage = 0
 
         while True:
             max_retries = 5
@@ -119,8 +195,8 @@ class ChatAgent:
             for attempt in range(max_retries):
                 try:
                     chat_completion_res = self.client.chat.completions.create(
-                        model="deepseek/deepseek-v3.2-exp", messages=self.messages, tools=self.tools, tool_choice="auto", stream=True, max_tokens=65346, temperature=1, top_p=1,
-                        presence_penalty=0, frequency_penalty=0, response_format={"type": "text"}, extra_body={"top_k": 50, "repetition_penalty": 1, "min_p": 0}
+                        model="deepseek/deepseek-v3.2-exp", messages=self.messages, tools=self.tools, tool_choice="auto", stream=True, max_tokens=65346, temperature=0.7, top_p=1,
+                        presence_penalty=0, frequency_penalty=0, response_format={"type": "text"}, extra_body={"top_k": 50, "repetition_penalty": 1.5, "min_p": 0}
                     )
                     break  # If successful, exit the loop
                 except RateLimitError as e:

@@ -13,11 +13,12 @@ class FXSMAIndicatorTool:
         """
         Calculate the Simple Moving Average (SMA) for a forex ticker.
         """
-        # Polygon.io uses a specific format for forex tickers
-        if not ticker.startswith("C:"):
-            ticker = f"C:{ticker}"
+        # Polygon.io uses a specific format for forex tickers (e.g., C:USDCAD)
+        formatted_ticker = ticker.replace("/", "")
+        if not formatted_ticker.startswith("C:"):
+            formatted_ticker = f"C:{formatted_ticker}"
             
-        url = f"{self.base_url}/v1/indicators/sma/{ticker}"
+        url = f"{self.base_url}/v1/indicators/sma/{formatted_ticker}"
         params = {
             "apiKey": self.api_key,
             "timespan": timespan,
@@ -30,9 +31,29 @@ class FXSMAIndicatorTool:
         try:
             response = requests.get(url, params=params)
             response.raise_for_status()
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            return {"error": f"API request failed: {e}"}
+            raw_text = response.text
+            
+            # Attempt to parse the JSON response
+            try:
+                data = response.json()
+            except ValueError: # Catches JSONDecodeError
+                return {"error": "Failed to decode JSON from API response.", "raw_response": raw_text}
+
+            # Correctly parse the nested response
+            if "results" in data and "values" in data["results"]:
+                return data["results"]["values"]
+            else:
+                return {"error": "Invalid API response format", "data": data}
+        except requests.exceptions.HTTPError as http_err:
+            error_message = f"HTTP error occurred: {http_err}"
+            try:
+                error_details = response.json()
+                error_message += f" - {error_details.get('error', 'No details')}"
+            except ValueError:
+                error_message += f" - Response content: {response.text}"
+            return {"error": error_message}
+        except requests.exceptions.RequestException as req_err:
+            return {"error": f"API request failed: {req_err}"}
 
     def get_tools(self):
         return [

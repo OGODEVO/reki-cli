@@ -11,4 +11,5 @@ dependencies = [
     "tiktoken",
     "requests",
     "mem0ai",
+    "scikit-learn",
 ]
