@@ -4,7 +4,6 @@ import random
 import time
 import tiktoken
 from openai import OpenAI, RateLimitError
-from helpers.mem0_helper import Mem0Helper
 from tools.brave_search import BrowserTool
 from tools.web_fetcher import WebFetcherTool
 from tools.fx_sma_indicator import FXSMAIndicatorTool
@@ -32,14 +31,12 @@ def count_tokens(messages, model="gpt-4"):
     return num_tokens
 
 class ChatAgent:
-    def __init__(self, api_key, mem0_api_key, user_id, system_prompt):
+    def __init__(self, api_key, user_id, system_prompt):
         self.client = OpenAI(base_url="https://api.novita.ai/openai", api_key=api_key)
-        self.mem0_helper = Mem0Helper(api_key=mem0_api_key, user_id=user_id)
         self.original_system_prompt = system_prompt
         self.messages = [] # Messages will be constructed dynamically
         self.analysis_cache = {} # Cache for the current turn's analysis
         self.tool_emojis = ["📈", "💰", "📊", "💹"]
-        self.current_stage = 0 # Add this line to initialize the stage
         
         self.browser_tool = BrowserTool()
         self.web_fetcher_tool = WebFetcherTool()
@@ -74,118 +71,15 @@ class ChatAgent:
             "get_market_status": self.fx_market_status_tool.get_status,
         }
 
-    def _get_memory_context(self, user_input):
-        """
-        Retrieves user and agent memories to build a dynamic context.
-        """
-        user_memories = None
-        if user_input and user_input.strip():
-            # Make the search query more specific and reduce the number of results
-            search_query = f"Technical Forex market analysis for currency pairs related to: {user_input}"
-            user_memories = self.mem0_helper.search(search_query, limit=3)
-        agent_memories = self.mem0_helper.search_agent_memory("personality, communication style", limit=2)
-
-        context = ""
-        if user_memories and user_memories.get("results"):
-            context += "\n\n--- User Memories ---\n"
-            context += "\n".join([m["memory"] for m in user_memories["results"]])
-        
-        if agent_memories and agent_memories.get("results"):
-            context += "\n\n--- Agent Style Guide ---\n"
-            context += "\n".join([m["memory"] for m in agent_memories["results"]])
-            
-        return context
-
-    def _get_current_stage(self):
-        return self.current_stage
-
     def get_response(self, user_input):
-        # 1. Get memory context
-        memory_context = self._get_memory_context(user_input)
+        # 1. Construct dynamic system prompt
+        dynamic_system_prompt = f"{self.original_system_prompt}"
         
-        # 2. Construct dynamic system prompt
-        dynamic_system_prompt = f"{self.original_system_prompt}\n{memory_context}"
-        
-        # 3. Reconstruct messages for this turn
+        # 2. Reconstruct messages for this turn
         # We keep the last few messages for short-term context, plus the new dynamic prompt
-        short_term_history = self.messages[-10:] # Keep last 5 turns
+        short_term_history = self.messages[-4:] # Keep last 2 turns
         self.messages = [{"role": "system", "content": dynamic_system_prompt}] + short_term_history
         self.messages.append({"role": "user", "content": user_input})
-
-        # Stage-based logic
-        if self.current_stage == 0:
-            # Start of the analysis, call get_market_status
-            self.messages.append({
-                "role": "assistant",
-                "content": "Starting the analysis. First, let's check the market status.",
-                "tool_calls": [{
-                    "id": "call_market_status",
-                    "type": "function",
-                    "function": {
-                        "name": "get_market_status",
-                        "arguments": "{}"
-                    }
-                }]
-            })
-            self.current_stage = 1
-        elif self.current_stage == 1:
-            # Market status checked, now do trend analysis
-            self.messages.append({
-                "role": "assistant",
-                "content": "Market is open. Now, let's proceed with Trend Analysis.",
-                "tool_calls": [
-                    {
-                        "id": "call_sma_indicator",
-                        "type": "function",
-                        "function": {
-                            "name": "get_sma_indicator",
-                            "arguments": "{\"instrument\": \"AUD/CAD\", \"period\": 50}"
-                        }
-                    },
-                    {
-                        "id": "call_ema_indicator",
-                        "type": "function",
-                        "function": {
-                            "name": "get_ema_indicator",
-                            "arguments": "{\"instrument\": \"AUD/CAD\", \"period\": 20}"
-                        }
-                    }
-                ]
-            })
-            self.current_stage = 2
-        elif self.current_stage == 2:
-            # Trend analysis done, now do momentum analysis
-            self.messages.append({
-                "role": "assistant",
-                "content": "Trend Analysis complete. Now, let's proceed with Momentum Analysis.",
-                "tool_calls": [{
-                    "id": "call_macd_indicator",
-                    "type": "function",
-                    "function": {
-                        "name": "get_macd_indicator",
-                        "arguments": "{\"instrument\": \"AUD/CAD\"}"
-                    }
-                }]
-            })
-            self.current_stage = 3
-        elif self.current_stage == 3:
-            # Momentum analysis done, now do overbought/oversold analysis
-            self.messages.append({
-                "role": "assistant",
-                "content": "Momentum Analysis complete. Now, let's proceed with Overbought/Oversold Analysis.",
-                "tool_calls": [{
-                    "id": "call_rsi_indicator",
-                    "type": "function",
-                    "function": {
-                        "name": "get_rsi_indicator",
-                        "arguments": "{\"instrument\": \"AUD/CAD\"}"
-                    }
-                }]
-            })
-            self.current_stage = 4
-        else:
-            # All stages are done, reset the stage
-            self.current_stage = 0
 
         while True:
             max_retries = 5
@@ -195,8 +89,7 @@ class ChatAgent:
             for attempt in range(max_retries):
                 try:
                     chat_completion_res = self.client.chat.completions.create(
-                        model="deepseek/deepseek-v3.2-exp", messages=self.messages, tools=self.tools, tool_choice="auto", stream=True, max_tokens=65346, temperature=0.7, top_p=1,
-                        presence_penalty=0, frequency_penalty=0, response_format={"type": "text"}, extra_body={"top_k": 50, "repetition_penalty": 1.5, "min_p": 0}
+                        model="deepseek/deepseek-v3.2-exp", messages=self.messages, tools=self.tools, tool_choice="auto", stream=True, max_tokens=65346, temperature=0.7
                     )
                     break  # If successful, exit the loop
                 except RateLimitError as e:
@@ -232,10 +125,7 @@ class ChatAgent:
             
             # 4. Add the exchange to memory *after* the response is complete, if there's content
             if full_response_content and full_response_content.strip():
-                self.mem0_helper.add([
-                    {"role": "user", "content": user_input},
-                    {"role": "assistant", "content": full_response_content}
-                ])
+                pass
 
             if tool_call_chunks:
                 self.messages.append({"role": "assistant", "tool_calls": tool_call_chunks})

@@ -13,18 +13,17 @@ from ui import TerminalUI
 
 def get_env_vars():
     novita_api_key = os.environ.get("NOVITA_API_KEY")
-    mem0_api_key = os.environ.get("MEM0_API_KEY")
     user_id = os.environ.get("USER_ID", "default_user")
-    return novita_api_key, mem0_api_key, user_id
+    return novita_api_key, user_id
 
 def main():
     load_dotenv()
     ui = TerminalUI()
     ui.display_intro()
 
-    novita_api_key, mem0_api_key, user_id = get_env_vars()
-    if not novita_api_key or not mem0_api_key:
-        ui.display_error("API keys for Novita and Mem0 must be set in the .env file.")
+    novita_api_key, user_id = get_env_vars()
+    if not novita_api_key:
+        ui.display_error("API key for Novita must be set in the .env file.")
         exit()
 
     try:
@@ -41,7 +40,7 @@ def main():
     current_date = datetime.now(chicago_tz).strftime("%A, %d %B %Y %I:%M:%S %p")
     system_prompt = system_prompt_template.replace("{current_date}", current_date)
 
-    agent = ChatAgent(novita_api_key, mem0_api_key, user_id, system_prompt)
+    agent = ChatAgent(novita_api_key, user_id, system_prompt)
 
     ui.console.print("\nType 'exit' or press Ctrl+C to end the chat.")
 
