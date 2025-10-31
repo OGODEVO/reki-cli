@@ -1,8 +1,9 @@
 import os
 import json
 import random
+import time
 import tiktoken
-from openai import OpenAI
+from openai import OpenAI, RateLimitError
 from helpers.mem0_helper import Mem0Helper
 from tools.brave_search import BrowserTool
 from tools.web_fetcher import WebFetcherTool
@@ -78,7 +79,9 @@ class ChatAgent:
         """
         user_memories = None
         if user_input and user_input.strip():
-            user_memories = self.mem0_helper.search(user_input, limit=5)
+            # Make the search query more specific and reduce the number of results
+            search_query = f"Technical Forex market analysis for currency pairs related to: {user_input}"
+            user_memories = self.mem0_helper.search(search_query, limit=3)
         agent_memories = self.mem0_helper.search_agent_memory("personality, communication style", limit=2)
 
         context = ""
@@ -109,10 +112,28 @@ class ChatAgent:
         self.messages.append({"role": "user", "content": user_input})
 
         while True:
-            chat_completion_res = self.client.chat.completions.create(
-                model="deepseek/deepseek-v3.2-exp", messages=self.messages, tools=self.tools, tool_choice="auto", stream=True, max_tokens=65346, temperature=1, top_p=1,
-                presence_penalty=0, frequency_penalty=0, response_format={"type": "text"}, extra_body={"top_k": 50, "repetition_penalty": 1, "min_p": 0}
-            )
+            max_retries = 5
+            base_delay = 1  # in seconds
+            chat_completion_res = None
+
+            for attempt in range(max_retries):
+                try:
+                    chat_completion_res = self.client.chat.completions.create(
+                        model="deepseek/deepseek-v3.2-exp", messages=self.messages, tools=self.tools, tool_choice="auto", stream=True, max_tokens=65346, temperature=1, top_p=1,
+                        presence_penalty=0, frequency_penalty=0, response_format={"type": "text"}, extra_body={"top_k": 50, "repetition_penalty": 1, "min_p": 0}
+                    )
+                    break  # If successful, exit the loop
+                except RateLimitError as e:
+                    if attempt < max_retries - 1:
+                        delay = base_delay * (2 ** attempt)
+                        yield f"\n[Rate limit exceeded. Retrying in {delay}s...]"
+                        time.sleep(delay)
+                    else:
+                        raise e  # Re-raise the exception after the last attempt
+            
+            if chat_completion_res is None:
+                yield "\n[API call failed after multiple retries.]"
+                return
 
             full_response_content = ""
             tool_call_chunks = []
@@ -154,14 +175,15 @@ class ChatAgent:
                         function_args = json.loads(function_args_str)
                         function_to_call = self.available_functions[function_name]
                         
+                        # Announce tool execution first
+                        emoji = random.choice(self.tool_emojis)
+                        yield f"Executing tool {emoji} ... "
+
                         # Check cache before executing
                         cache_key = f"{function_name}_{json.dumps(function_args, sort_keys=True)}"
                         if cache_key in self.analysis_cache:
                             function_response = self.analysis_cache[cache_key]
                         else:
-                            emoji = random.choice(self.tool_emojis)
-                            yield f"Executing tool {emoji} ... "
-                            
                             if function_name == "url_fetch":
                                 url = function_args.get("url")
                                 prompt = f"Please provide a clean, concise summary of the main content of the webpage at the following URL: {url}. Focus on the key facts and information presented on the page, omitting boilerplate like navigation menus, ads, and footers."
