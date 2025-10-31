@@ -66,7 +66,14 @@ class TerminalUI:
         self.console.print(Panel(f"[bold {style}]{message}[/bold {style}]", title=f"[bold {style}]{title}[/bold {style}]", border_style=style))
 
     def display_stats(self, response_time, cps, prompt_tokens, completion_tokens, total_tokens):
-        stats_table = Table(show_header=False, show_edge=False, box=None, padding=(0, 1))
-        stats_table.add_column(style="dim")
-        stats_table.add_row(f"Response Time: {response_time:.2f}s | CPS: {cps:.2f} | Prompt: {prompt_tokens} tokens | Completion: {completion_tokens} tokens | Total: {total_tokens} tokens")
-        self.console.print(stats_table)
+        stats_text = f"Response Time: {response_time:.2f}s | CPS: {cps:.2f} | Prompt: {prompt_tokens} tokens | Completion: {completion_tokens} tokens | Total: {total_tokens} tokens"
+        
+        with self.console.status("", spinner="line", spinner_style="dim") as status:
+            time.sleep(0.5)
+            status.update(f"[dim]{stats_text}[/dim]", spinner="line", spinner_style="dim")
+            time.sleep(1.5)
+
+        final_stats_table = Table.grid(padding=(0, 1))
+        final_stats_table.add_column(style="dim")
+        final_stats_table.add_row(f"└─ {stats_text}")
+        self.console.print(final_stats_table)
