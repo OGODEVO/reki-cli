@@ -33,5 +33,9 @@ CUSTOM_CATEGORIES = [
     {
         "name": "progress",
         "description": "Updates on the user's progress towards their goals."
+    },
+    {
+        "name": "gambling_decisions",
+        "description": "Memories related to gambling, including past bets, choices, and their impact on the bankroll. Used to inform future betting suggestions."
     }
 ]

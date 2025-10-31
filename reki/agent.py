@@ -5,6 +5,10 @@ from openai import OpenAI
 from helpers.mem0_helper import Mem0Helper
 from tools.brave_search import BrowserTool
 from tools.web_fetcher import WebFetcherTool
+from tools.fx_converter import FXConverterTool
+from tools.fx_market_summary import FXMarketSummaryTool
+from tools.fx_sma_indicator import FXSMAIndicatorTool
+from tools.fx_ema_indicator import FXEMAIndicatorTool
 from IPython import get_ipython
 
 def count_tokens(messages, model="gpt-4"):
@@ -33,6 +37,10 @@ class ChatAgent:
         
         self.browser_tool = BrowserTool()
         self.web_fetcher_tool = WebFetcherTool()
+        self.fx_converter_tool = FXConverterTool()
+        self.fx_market_summary_tool = FXMarketSummaryTool()
+        self.fx_sma_indicator_tool = FXSMAIndicatorTool()
+        self.fx_ema_indicator_tool = FXEMAIndicatorTool()
         
         self.tools = self._setup_tools()
         self.available_functions = self._setup_available_functions()
@@ -41,19 +49,29 @@ class ChatAgent:
         tools = []
         tools.extend(self.browser_tool.get_tools())
         tools.extend(self.web_fetcher_tool.get_tools())
+        tools.extend(self.fx_converter_tool.get_tools())
+        tools.extend(self.fx_market_summary_tool.get_tools())
+        tools.extend(self.fx_sma_indicator_tool.get_tools())
+        tools.extend(self.fx_ema_indicator_tool.get_tools())
         return tools
 
     def _setup_available_functions(self):
         return {
             "browser_search": self.browser_tool.search,
             "url_fetch": self.web_fetcher_tool.fetch,
+            "get_currency_conversion": self.fx_converter_tool.get_conversion,
+            "get_daily_market_summary": self.fx_market_summary_tool.get_daily_summary,
+            "get_sma_indicator": self.fx_sma_indicator_tool.get_sma,
+            "get_ema_indicator": self.fx_ema_indicator_tool.get_ema,
         }
 
     def _get_memory_context(self, user_input):
         """
         Retrieves user and agent memories to build a dynamic context.
         """
-        user_memories = self.mem0_helper.search(user_input, limit=5)
+        user_memories = None
+        if user_input and user_input.strip():
+            user_memories = self.mem0_helper.search(user_input, limit=5)
         agent_memories = self.mem0_helper.search_agent_memory("personality, communication style", limit=2)
 
         context = ""

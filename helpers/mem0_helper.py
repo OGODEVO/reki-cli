@@ -1,4 +1,5 @@
 from mem0 import MemoryClient
+from httpx import HTTPError
 from .mem0_config import CUSTOM_INSTRUCTIONS, CUSTOM_CATEGORIES
 
 class Mem0Helper:
@@ -36,13 +37,27 @@ class Mem0Helper:
         """
         Searches for memories related to the user.
         """
-        return self.client.search(query, user_id=self.user_id, **kwargs)
+        if not query or not query.strip():
+            return {"results": []}
+        try:
+            filters = {"user_id": self.user_id}
+            return self.client.search(query, filters=filters, **kwargs)
+        except HTTPError as e:
+            print(f"Error searching user memory with query='{query}', filters={filters}, and kwargs={kwargs}: {e}")
+            return {"results": []}
 
     def search_agent_memory(self, query, **kwargs):
         """
         Searches for memories related to the agent's personality.
         """
-        return self.client.search(query, agent_id=self.agent_id, **kwargs)
+        if not query or not query.strip():
+            return {"results": []}
+        try:
+            filters = {"agent_id": self.agent_id}
+            return self.client.search(query, filters=filters, **kwargs)
+        except HTTPError as e:
+            print(f"Error searching agent memory with query='{query}', filters={filters}, and kwargs={kwargs}: {e}")
+            return {"results": []}
 
     def update(self, memory_id, new_data):
         """
