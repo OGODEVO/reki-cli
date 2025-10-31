@@ -9,6 +9,8 @@ from tools.fx_converter import FXConverterTool
 from tools.fx_market_summary import FXMarketSummaryTool
 from tools.fx_sma_indicator import FXSMAIndicatorTool
 from tools.fx_ema_indicator import FXEMAIndicatorTool
+from tools.fx_macd_indicator import FXMACDIndicatorTool
+from tools.fx_rsi_indicator import FXRSIIndicatorTool
 from IPython import get_ipython
 
 def count_tokens(messages, model="gpt-4"):
@@ -41,6 +43,8 @@ class ChatAgent:
         self.fx_market_summary_tool = FXMarketSummaryTool()
         self.fx_sma_indicator_tool = FXSMAIndicatorTool()
         self.fx_ema_indicator_tool = FXEMAIndicatorTool()
+        self.fx_macd_indicator_tool = FXMACDIndicatorTool()
+        self.fx_rsi_indicator_tool = FXRSIIndicatorTool()
         
         self.tools = self._setup_tools()
         self.available_functions = self._setup_available_functions()
@@ -53,6 +57,8 @@ class ChatAgent:
         tools.extend(self.fx_market_summary_tool.get_tools())
         tools.extend(self.fx_sma_indicator_tool.get_tools())
         tools.extend(self.fx_ema_indicator_tool.get_tools())
+        tools.extend(self.fx_macd_indicator_tool.get_tools())
+        tools.extend(self.fx_rsi_indicator_tool.get_tools())
         return tools
 
     def _setup_available_functions(self):
@@ -63,6 +69,8 @@ class ChatAgent:
             "get_daily_market_summary": self.fx_market_summary_tool.get_daily_summary,
             "get_sma_indicator": self.fx_sma_indicator_tool.get_sma,
             "get_ema_indicator": self.fx_ema_indicator_tool.get_ema,
+            "get_macd_indicator": self.fx_macd_indicator_tool.get_macd,
+            "get_rsi_indicator": self.fx_rsi_indicator_tool.get_rsi,
         }
 
     def _get_memory_context(self, user_input):
