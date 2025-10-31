@@ -1,16 +1,16 @@
 import os
 import json
+import random
 import tiktoken
 from openai import OpenAI
 from helpers.mem0_helper import Mem0Helper
 from tools.brave_search import BrowserTool
 from tools.web_fetcher import WebFetcherTool
-from tools.fx_converter import FXConverterTool
-from tools.fx_market_summary import FXMarketSummaryTool
 from tools.fx_sma_indicator import FXSMAIndicatorTool
 from tools.fx_ema_indicator import FXEMAIndicatorTool
 from tools.fx_macd_indicator import FXMACDIndicatorTool
 from tools.fx_rsi_indicator import FXRSIIndicatorTool
+from tools.fx_market_status import FXMarketStatusTool
 from IPython import get_ipython
 
 def count_tokens(messages, model="gpt-4"):
@@ -36,15 +36,16 @@ class ChatAgent:
         self.mem0_helper = Mem0Helper(api_key=mem0_api_key, user_id=user_id)
         self.original_system_prompt = system_prompt
         self.messages = [] # Messages will be constructed dynamically
+        self.analysis_cache = {} # Cache for the current turn's analysis
+        self.tool_emojis = ["📈", "💰", "📊", "💹"]
         
         self.browser_tool = BrowserTool()
         self.web_fetcher_tool = WebFetcherTool()
-        self.fx_converter_tool = FXConverterTool()
-        self.fx_market_summary_tool = FXMarketSummaryTool()
         self.fx_sma_indicator_tool = FXSMAIndicatorTool()
         self.fx_ema_indicator_tool = FXEMAIndicatorTool()
         self.fx_macd_indicator_tool = FXMACDIndicatorTool()
         self.fx_rsi_indicator_tool = FXRSIIndicatorTool()
+        self.fx_market_status_tool = FXMarketStatusTool()
         
         self.tools = self._setup_tools()
         self.available_functions = self._setup_available_functions()
@@ -53,24 +54,22 @@ class ChatAgent:
         tools = []
         tools.extend(self.browser_tool.get_tools())
         tools.extend(self.web_fetcher_tool.get_tools())
-        tools.extend(self.fx_converter_tool.get_tools())
-        tools.extend(self.fx_market_summary_tool.get_tools())
         tools.extend(self.fx_sma_indicator_tool.get_tools())
         tools.extend(self.fx_ema_indicator_tool.get_tools())
         tools.extend(self.fx_macd_indicator_tool.get_tools())
         tools.extend(self.fx_rsi_indicator_tool.get_tools())
+        tools.extend(self.fx_market_status_tool.get_tools())
         return tools
 
     def _setup_available_functions(self):
         return {
             "browser_search": self.browser_tool.search,
             "url_fetch": self.web_fetcher_tool.fetch,
-            "get_currency_conversion": self.fx_converter_tool.get_conversion,
-            "get_daily_market_summary": self.fx_market_summary_tool.get_daily_summary,
             "get_sma_indicator": self.fx_sma_indicator_tool.get_sma,
             "get_ema_indicator": self.fx_ema_indicator_tool.get_ema,
             "get_macd_indicator": self.fx_macd_indicator_tool.get_macd,
             "get_rsi_indicator": self.fx_rsi_indicator_tool.get_rsi,
+            "get_market_status": self.fx_market_status_tool.get_status,
         }
 
     def _get_memory_context(self, user_input):
@@ -94,6 +93,9 @@ class ChatAgent:
         return context
 
     def get_response(self, user_input):
+        # 0. Clear the cache for the new turn
+        self.analysis_cache = {}
+
         # 1. Get memory context
         memory_context = self._get_memory_context(user_input)
         
@@ -131,11 +133,12 @@ class ChatAgent:
                             if tool_call_chunk.function.name: chunk_data["function"]["name"] = tool_call_chunk.function.name
                             if tool_call_chunk.function.arguments: chunk_data["function"]["arguments"] += tool_call_chunk.function.arguments
             
-            # 4. Add the exchange to memory *after* the response is complete
-            self.mem0_helper.add([
-                {"role": "user", "content": user_input},
-                {"role": "assistant", "content": full_response_content}
-            ])
+            # 4. Add the exchange to memory *after* the response is complete, if there's content
+            if full_response_content and full_response_content.strip():
+                self.mem0_helper.add([
+                    {"role": "user", "content": user_input},
+                    {"role": "assistant", "content": full_response_content}
+                ])
 
             if tool_call_chunks:
                 self.messages.append({"role": "assistant", "tool_calls": tool_call_chunks})
@@ -151,16 +154,25 @@ class ChatAgent:
                         function_args = json.loads(function_args_str)
                         function_to_call = self.available_functions[function_name]
                         
-                        yield f"\n\nExecuting function: `{function_name}` with arguments: `{function_args}`\n\n"
-                        
-                        if function_name == "url_fetch":
-                            url = function_args.get("url")
-                            prompt = f"Please provide a clean, concise summary of the main content of the webpage at the following URL: {url}. Focus on the key facts and information presented on the page, omitting boilerplate like navigation menus, ads, and footers."
-                            ipython = get_ipython()
-                            function_response = ipython.run_cell_magic('tool', 'web_fetch', prompt)
+                        # Check cache before executing
+                        cache_key = f"{function_name}_{json.dumps(function_args, sort_keys=True)}"
+                        if cache_key in self.analysis_cache:
+                            function_response = self.analysis_cache[cache_key]
                         else:
-                            function_response = function_to_call(**function_args)
-                        
+                            emoji = random.choice(self.tool_emojis)
+                            yield f"Executing tool {emoji} ... "
+                            
+                            if function_name == "url_fetch":
+                                url = function_args.get("url")
+                                prompt = f"Please provide a clean, concise summary of the main content of the webpage at the following URL: {url}. Focus on the key facts and information presented on the page, omitting boilerplate like navigation menus, ads, and footers."
+                                ipython = get_ipython()
+                                function_response = ipython.run_cell_magic('tool', 'web_fetch', prompt)
+                            else:
+                                function_response = function_to_call(**function_args)
+                            
+                            # Store result in cache
+                            self.analysis_cache[cache_key] = function_response
+
                         self.messages.append({"tool_call_id": tool_call["id"], "role": "tool", "name": function_name, "content": json.dumps(function_response)})
                     except (json.JSONDecodeError, KeyError) as e:
                         error_message = f"Error processing tool call for {function_name}: {e}"
