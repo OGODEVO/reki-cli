@@ -36,9 +36,19 @@ def main():
         ui.display_error("system_prompt.txt not found in the 'reki' directory.")
         exit()
 
+    try:
+        memory_path = os.path.join(script_dir, "memory.txt")
+        with open(memory_path, "r") as f:
+            memory_content = f.read()
+    except FileNotFoundError:
+        memory_content = ""
+
     chicago_tz = ZoneInfo("America/Chicago")
     current_date = datetime.now(chicago_tz).strftime("%A, %d %B %Y %I:%M:%S %p")
     system_prompt = system_prompt_template.replace("{current_date}", current_date)
+    
+    if memory_content:
+        system_prompt = f"--- Previous Conversation Summaries ---\n{memory_content}\n\n--- Current Task ---\n{system_prompt}"
 
     agent = ChatAgent(novita_api_key, user_id, system_prompt)
 
@@ -53,6 +63,11 @@ def main():
             if user_input.lower() == "/reset":
                 agent.messages = [{"role": "system", "content": system_prompt}]
                 ui.display_message("Conversation history has been reset.", "Reset", "yellow")
+                continue
+            
+            if user_input.lower() == "/save":
+                agent.save_memory_entry()
+                ui.display_message("Conversation thread saved to memory.", "Memory Saved", "cyan")
                 continue
 
             prompt_tokens = count_tokens(agent.messages)

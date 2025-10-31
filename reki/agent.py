@@ -3,6 +3,7 @@ import json
 import random
 import time
 import tiktoken
+from datetime import datetime
 from openai import OpenAI, RateLimitError
 from tools.brave_search import BrowserTool
 from tools.web_fetcher import WebFetcherTool
@@ -70,6 +71,37 @@ class ChatAgent:
             "get_rsi_indicator": self.fx_rsi_indicator_tool.get_rsi,
             "get_market_status": self.fx_market_status_tool.get_status,
         }
+
+    def save_memory_entry(self):
+        """
+        Generates a summary of the current conversation and appends it to the memory file.
+        """
+        summary_prompt = "Please provide a concise, one-paragraph summary of the key points, decisions, and outcomes from the following conversation history. Focus on information that would be important context for a future conversation."
+        
+        # Temporarily add the summary request to the messages
+        messages_for_summary = self.messages + [{"role": "user", "content": summary_prompt}]
+        
+        try:
+            response = self.client.chat.completions.create(
+                model="deepseek/deepseek-v3.2-exp",
+                messages=messages_for_summary,
+                temperature=0.5,
+                max_tokens=250
+            )
+            
+            summary = response.choices[0].message.content.strip()
+            
+            # Append the summary to the memory file
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            memory_path = os.path.join(script_dir, "memory.txt")
+            
+            with open(memory_path, "a") as f:
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                f.write(f"\n\n--- Entry: {timestamp} ---\n{summary}")
+                
+        except Exception as e:
+            # In a real application, you'd want more robust error handling
+            print(f"Error saving memory: {e}")
 
     def get_response(self, user_input):
         # 1. Construct dynamic system prompt
