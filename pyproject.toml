@@ -11,4 +11,5 @@ dependencies = [
     "tiktoken",
     "requests",
     "scikit-learn",
+    "watchdog",
 ]

@@ -161,6 +161,7 @@ class ChatAgent:
 
             # 3. Decide what to do based on the LLM's response
             tool_calls = response_message.tool_calls
+            response_content = response_message.content if response_message.content else ""
 
             # Case 1: The LLM wants to call tools.
             if tool_calls:
@@ -215,9 +216,52 @@ class ChatAgent:
                 # Loop back to the start to call the LLM again with the tool results
                 continue
 
+            # Case 1B: The LLM is putting the tool call in the content (fallback)
+            if "<tool_calls_begin>" in response_content:
+                self.messages.append(response_message) # Save the model's response
+
+                # --- Parsing the custom tool call format ---
+                try:
+                    # Extract content between markers
+                    call_str = response_content.split("<tool_call_begin>")[1].split("<tool_call_end>")[0].strip()
+                    
+                    # Split function name and arguments
+                    parts = call_str.split("<tool_sep>")
+                    function_name = parts[0].strip()
+                    
+                    # The arguments part might be empty JSON '{}' or have content
+                    args_str = parts[1].strip() if len(parts) > 1 else "{}"
+                    function_args = json.loads(args_str)
+
+                    # --- Executing the tool ---
+                    self.ui.display_tool_call(function_name, function_args)
+                    function_to_call = self.available_functions[function_name]
+                    function_response = function_to_call(**function_args)
+
+                    # --- Appending the result ---
+                    tool_result = {
+                        "tool_call_id": f"call_{random.randint(1000, 9999)}", # Generate a random ID
+                        "role": "tool",
+                        "name": function_name,
+                        "content": json.dumps(function_response),
+                    }
+                    self.messages.append(tool_result)
+
+                except Exception as e:
+                    error_message = f"Error parsing or executing tool from content: {e}"
+                    self.ui.display_error(error_message)
+                    # Append an error message for the model to see
+                    self.messages.append({
+                        "role": "tool",
+                        "name": function_name,
+                        "content": json.dumps({"error": error_message}),
+                    })
+
+                continue # Loop back to the LLM with the tool result
+
             # Case 2: The LLM has finished and is providing the final text response.
-            elif response_message.content:
-                final_content = response_message.content
+            elif response_content:
+                final_content = response_content
                 self.messages.append({"role": "assistant", "content": final_content})
                 # Yield the final content to the UI's character-by-character streamer
                 yield final_content

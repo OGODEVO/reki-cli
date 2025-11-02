@@ -74,10 +74,13 @@ class TerminalUI:
         self.console.print(f"{emoji} [bold]{title}:[/bold] [cyan]{text}[/cyan]")
 
     def display_tool_call(self, tool_name, tool_args):
-        """Displays a formatted panel for tool calls."""
-        args_str = json.dumps(tool_args, indent=2)
-        panel_content = f"[bold]{tool_name}[/bold]\n[json]{args_str}[/json]"
-        self.console.print(Panel(panel_content, title="[bold]🛠️ Calling Tool[/bold]", border_style="yellow"))
+        """Displays a simple, single-line message for tool calls."""
+        # tool_emojis = ["📈", "💰", "📊", "💹", "🛠️", "⚙️", "💡"]
+        # emoji = random.choice(tool_emojis)
+        # # Compact JSON arguments for cleaner display
+        # args_str = json.dumps(tool_args, separators=(',', ':'))
+        # self.console.print(f"{emoji} [bold yellow]Executing Tool:[/bold yellow] [cyan]{tool_name}({args_str})[/cyan]")
+        pass
 
     def display_thinking(self):
         return Live(Spinner("dots", text="[bold white]Ω Reki:[/bold white] Thinking..."), console=self.console, transient=True)
@@ -91,9 +94,21 @@ class TerminalUI:
         full_response_content = ""
         
         with Live(console=self.console, auto_refresh=False) as live:
-            # Stage 1: Display the "thinking" spinner immediately
-            spinner = Spinner("moon")
-            live.update(spinner, refresh=True)
+            # Stage 1: Display the animated "thinking" text
+            animation_frames = [
+                "[bold #8A2BE2]:::::[reki]:::::[/bold #8A2BE2]",  # BlueViolet
+                "[bold #9370DB]:::::[reki]:::::[/bold #9370DB]",  # MediumPurple
+                "[bold #BA55D3]:::::[reki]:::::[/bold #BA55D3]",  # MediumOrchid
+                "[bold #9370DB]:::::[reki]:::::[/bold #9370DB]",  # MediumPurple
+            ]
+            start_time = time.time()
+            frame_index = 0
+            
+            # Animate for a bit before blocking for the first token
+            while time.time() - start_time < 1.2: # Animate for 1.2 seconds
+                live.update(Align.center(animation_frames[frame_index]), refresh=True)
+                frame_index = (frame_index + 1) % len(animation_frames)
+                time.sleep(0.15)
 
             # Stage 2: Wait for the first chunk and then switch to text
             try:
