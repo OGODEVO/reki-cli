@@ -73,8 +73,19 @@ def main():
             for line in f:
                 try:
                     entry = json.loads(line)
-                    summaries.append(entry.get("summary", ""))
-                except json.JSONDecodeError:
+                    expires_at_str = entry.get("expires_at")
+                    
+                    is_expired = False
+                    if expires_at_str:
+                        expiration_dt = datetime.fromisoformat(expires_at_str)
+                        if datetime.now() > expiration_dt:
+                            is_expired = True
+                    
+                    if not is_expired:
+                        summaries.append(entry.get("summary", ""))
+
+                except (json.JSONDecodeError, ValueError):
+                    # Handle cases where a line is not valid JSON or timestamp is malformed
                     continue
         memory_content = "\n".join(summaries)
     except FileNotFoundError:
@@ -87,7 +98,7 @@ def main():
     if memory_content:
         system_prompt = f"--- Previous Conversation Summaries ---\n{memory_content}\n\n--- Current Task ---\n{system_prompt}"
 
-    agent = ChatAgent(api_key, user_id, system_prompt, model_name, api_base_url)
+    agent = ChatAgent(api_key, user_id, system_prompt, model_name, api_base_url, ui)
 
     ui.console.print(f"\n[dim]Type 'exit' or press Ctrl+C to end the chat.[/dim]")
 
@@ -102,17 +113,15 @@ def main():
                 ui.display_message("Conversation history has been reset.", "Reset", "yellow")
                 continue
             
-            if user_input.lower() == "/save":
-                agent.save_memory_entry()
+            if user_input.lower().startswith("/save"):
+                agent.save_memory_entry(user_input)
                 ui.display_message("Conversation thread saved to memory.", "Memory Saved", "cyan")
                 continue
 
             prompt_tokens = count_tokens(agent.messages)
             start_time = time.time()
             
-            with ui.display_thinking():
-                response_stream = agent.get_response(user_input)
-            
+            response_stream = agent.get_response(user_input)
             full_response_content = ui.display_response_stream(response_stream)
             
             end_time = time.time()

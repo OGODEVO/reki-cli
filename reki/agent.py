@@ -3,16 +3,18 @@ import json
 import random
 import time
 import tiktoken
-from datetime import datetime
+import concurrent.futures
+from datetime import datetime, timedelta
 from openai import OpenAI, RateLimitError
 from tools.brave_search import BrowserTool
-from tools.web_fetcher import WebFetcherTool
+from tools.google_finance_tool import GoogleFinanceTool
 from tools.fx_sma_indicator import FXSMAIndicatorTool
 from tools.fx_ema_indicator import FXEMAIndicatorTool
 from tools.fx_macd_indicator import FXMACDIndicatorTool
 from tools.fx_rsi_indicator import FXRSIIndicatorTool
 from tools.fx_market_status import FXMarketStatusTool
 from IPython import get_ipython
+from ui import TerminalUI
 
 def count_tokens(messages, model="gpt-4"):
     """Return the number of tokens used by a list of messages."""
@@ -32,17 +34,18 @@ def count_tokens(messages, model="gpt-4"):
     return num_tokens
 
 class ChatAgent:
-    def __init__(self, api_key, user_id, system_prompt, model_name, api_base_url):
+    def __init__(self, api_key, user_id, system_prompt, model_name, api_base_url, ui):
         self.client = OpenAI(base_url=api_base_url, api_key=api_key)
         self.user_id = user_id
         self.original_system_prompt = system_prompt
         self.model_name = model_name
+        self.ui = ui
         self.messages = [] # Messages will be constructed dynamically
         self.analysis_cache = {} # Cache for the current turn's analysis
         self.tool_emojis = ["📈", "💰", "📊", "💹"]
         
         self.browser_tool = BrowserTool()
-        self.web_fetcher_tool = WebFetcherTool()
+        self.google_finance_tool = GoogleFinanceTool()
         self.fx_sma_indicator_tool = FXSMAIndicatorTool()
         self.fx_ema_indicator_tool = FXEMAIndicatorTool()
         self.fx_macd_indicator_tool = FXMACDIndicatorTool()
@@ -55,7 +58,7 @@ class ChatAgent:
     def _setup_tools(self):
         tools = []
         tools.extend(self.browser_tool.get_tools())
-        tools.extend(self.web_fetcher_tool.get_tools())
+        tools.extend(self.google_finance_tool.get_tools())
         tools.extend(self.fx_sma_indicator_tool.get_tools())
         tools.extend(self.fx_ema_indicator_tool.get_tools())
         tools.extend(self.fx_macd_indicator_tool.get_tools())
@@ -66,7 +69,7 @@ class ChatAgent:
     def _setup_available_functions(self):
         return {
             "browser_search": self.browser_tool.search,
-            "url_fetch": self.web_fetcher_tool.fetch,
+            "get_finance_data": self.google_finance_tool.get_finance_data,
             "get_sma_indicator": self.fx_sma_indicator_tool.get_sma,
             "get_ema_indicator": self.fx_ema_indicator_tool.get_ema,
             "get_macd_indicator": self.fx_macd_indicator_tool.get_macd,
@@ -74,10 +77,10 @@ class ChatAgent:
             "get_market_status": self.fx_market_status_tool.get_status,
         }
 
-    def save_memory_entry(self):
+    def save_memory_entry(self, command):
         """
         Generates a summary of the current conversation and appends it as a JSON object
-        to the memory file.
+        to the memory file, with an optional expiration time.
         """
         summary_prompt = "Your task is to create a concise, single-paragraph summary of the following conversation for long-term memory. Identify the user's primary goal or question, and the key information or resolution provided by the assistant. Distill the most critical information needed to quickly understand the context of this conversation in the future."
         
@@ -93,15 +96,37 @@ class ChatAgent:
             
             summary = response.choices[0].message.content.strip()
             
-            # Create the metadata dictionary
+            # --- Expiration Logic ---
+            parts = command.lower().split()
+            expires_at = None
+            if len(parts) == 3:
+                try:
+                    value = int(parts[1])
+                    unit = parts[2]
+                    
+                    if unit in ["h", "hr", "hrs", "hour", "hours"]:
+                        delta = timedelta(hours=value)
+                    elif unit in ["d", "day", "days"]:
+                        delta = timedelta(days=value)
+                    elif unit in ["w", "wk", "wks", "week", "weeks"]:
+                        delta = timedelta(weeks=value)
+                    else:
+                        delta = None
+                    
+                    if delta:
+                        expires_at = (datetime.now() + delta).isoformat()
+                except (ValueError, IndexError):
+                    pass # Ignore malformed commands
+            # --- End Expiration Logic ---
+
             memory_entry = {
                 "timestamp": datetime.now().isoformat(),
                 "user_id": self.user_id,
                 "summary": summary,
-                "conversation_token_count": count_tokens(self.messages)
+                "conversation_token_count": count_tokens(self.messages),
+                "expires_at": expires_at
             }
             
-            # Append the JSON object to the memory file
             script_dir = os.path.dirname(os.path.abspath(__file__))
             memory_path = os.path.join(script_dir, "memory.jsonl")
             
@@ -109,105 +134,95 @@ class ChatAgent:
                 f.write(json.dumps(memory_entry) + "\n")
                 
         except Exception as e:
-            # In a real application, you'd want more robust error handling
             print(f"Error saving memory: {e}")
 
     def get_response(self, user_input):
-        # 1. Construct dynamic system prompt
+        # 1. Construct dynamic system prompt and message history
         dynamic_system_prompt = f"{self.original_system_prompt}"
-        
-        # 2. Reconstruct messages for this turn
-        # We keep the last few messages for short-term context, plus the new dynamic prompt
-        short_term_history = self.messages[-4:] # Keep last 2 turns
+        short_term_history = self.messages[-4:]
         self.messages = [{"role": "system", "content": dynamic_system_prompt}] + short_term_history
         self.messages.append({"role": "user", "content": user_input})
 
+        # --- Start of Autonomous Loop ---
         while True:
-            max_retries = 5
-            base_delay = 1  # in seconds
-            chat_completion_res = None
-
-            for attempt in range(max_retries):
-                try:
-                    chat_completion_res = self.client.chat.completions.create(
-                        model=self.model_name, messages=self.messages, tools=self.tools, tool_choice="auto", stream=True, max_tokens=65346, temperature=0.7
-                    )
-                    break  # If successful, exit the loop
-                except RateLimitError as e:
-                    if attempt < max_retries - 1:
-                        delay = base_delay * (2 ** attempt)
-                        yield f"\n[Rate limit exceeded. Retrying in {delay}s...]"
-                        time.sleep(delay)
-                    else:
-                        raise e  # Re-raise the exception after the last attempt
-            
-            if chat_completion_res is None:
-                yield "\n[API call failed after multiple retries.]"
+            # 2. Call the LLM
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.model_name,
+                    messages=self.messages,
+                    tools=self.tools,
+                    tool_choice="auto",
+                    temperature=0.7
+                )
+                response_message = response.choices[0].message
+            except Exception as e:
+                self.ui.display_error(f"An API error occurred: {e}")
                 return
 
-            full_response_content = ""
-            tool_call_chunks = []
-            
-            for chunk in chat_completion_res:
-                if chunk.choices:
-                    chunk_content = chunk.choices[0].delta.content or ""
-                    full_response_content += chunk_content
-                    yield chunk_content
+            # 3. Decide what to do based on the LLM's response
+            tool_calls = response_message.tool_calls
 
-                    if chunk.choices[0].delta.tool_calls:
-                        for tool_call_chunk in chunk.choices[0].delta.tool_calls:
-                            if len(tool_call_chunks) <= tool_call_chunk.index:
-                                tool_call_chunks.append({"id": "", "type": "function", "function": {"name": "", "arguments": ""}})
-                            
-                            chunk_data = tool_call_chunks[tool_call_chunk.index]
-                            if tool_call_chunk.id: chunk_data["id"] = tool_call_chunk.id
-                            if tool_call_chunk.function.name: chunk_data["function"]["name"] = tool_call_chunk.function.name
-                            if tool_call_chunk.function.arguments: chunk_data["function"]["arguments"] += tool_call_chunk.function.arguments
-            
-            # 4. Add the exchange to memory *after* the response is complete, if there's content
-            if full_response_content and full_response_content.strip():
-                pass
+            # Case 1: The LLM wants to call tools.
+            if tool_calls:
+                # Append the assistant's decision to call tools, but ignore any conversational content
+                self.messages.append(response_message) 
 
-            if tool_call_chunks:
-                self.messages.append({"role": "assistant", "tool_calls": tool_call_chunks})
-                
-                for tool_call in tool_call_chunks:
-                    function_name = tool_call["function"]["name"]
-                    function_args_str = tool_call["function"]["arguments"]
-                    
+                def process_tool_call(tool_call):
+                    """Helper function to process a single tool call."""
+                    function_name = tool_call.function.name
                     try:
-                        if "</tool_sep" in function_args_str:
-                            function_args_str = function_args_str.split("</tool_sep")[0]
-
-                        function_args = json.loads(function_args_str)
-                        function_to_call = self.available_functions[function_name]
-                        
-                        # Announce tool execution first
-                        emoji = random.choice(self.tool_emojis)
-                        yield f"Executing tool {emoji} ... "
-
-                        # Check cache before executing
-                        cache_key = f"{function_name}_{json.dumps(function_args, sort_keys=True)}"
-                        if cache_key in self.analysis_cache:
-                            function_response = self.analysis_cache[cache_key]
+                        # Robustly parse arguments
+                        function_args_str = tool_call.function.arguments
+                        start_brace = function_args_str.find('{')
+                        end_brace = function_args_str.rfind('}')
+                        if start_brace != -1 and end_brace != -1 and start_brace < end_brace:
+                            json_str = function_args_str[start_brace:end_brace+1]
+                            function_args = json.loads(json_str)
                         else:
-                            if function_name == "url_fetch":
-                                url = function_args.get("url")
-                                prompt = f"Please provide a clean, concise summary of the main content of the webpage at the following URL: {url}. Focus on the key facts and information presented on the page, omitting boilerplate like navigation menus, ads, and footers."
-                                ipython = get_ipython()
-                                function_response = ipython.run_cell_magic('tool', 'web_fetch', prompt)
-                            else:
-                                function_response = function_to_call(**function_args)
-                            
-                            # Store result in cache
-                            self.analysis_cache[cache_key] = function_response
+                            raise json.JSONDecodeError("No valid JSON object found.", function_args_str, 0)
 
-                        self.messages.append({"tool_call_id": tool_call["id"], "role": "tool", "name": function_name, "content": json.dumps(function_response)})
-                    except (json.JSONDecodeError, KeyError) as e:
-                        error_message = f"Error processing tool call for {function_name}: {e}"
-                        yield f"\n[Error: {error_message}]"
-                        self.messages.append({"tool_call_id": tool_call["id"], "role": "tool", "name": function_name, "content": json.dumps({"error": error_message})})
+                        # Display the tool call in the UI immediately
+                        self.ui.display_tool_call(function_name, function_args)
+                        
+                        # Execute the tool function
+                        function_to_call = self.available_functions[function_name]
+                        function_response = function_to_call(**function_args)
+                        
+                        return {
+                            "tool_call_id": tool_call.id,
+                            "role": "tool",
+                            "name": function_name,
+                            "content": json.dumps(function_response),
+                        }
+                    except Exception as e:
+                        error_message = f"Error executing tool {function_name}: {e}"
+                        self.ui.display_error(error_message)
+                        return {
+                            "tool_call_id": tool_call.id,
+                            "role": "tool",
+                            "name": function_name,
+                            "content": json.dumps({"error": error_message}),
+                        }
+
+                # Execute all tool calls in parallel
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    tool_results = list(executor.map(process_tool_call, tool_calls))
+                
+                # Append all results to the message history
+                for result in tool_results:
+                    self.messages.append(result)
+                
+                # Loop back to the start to call the LLM again with the tool results
                 continue
+
+            # Case 2: The LLM has finished and is providing the final text response.
+            elif response_message.content:
+                final_content = response_message.content
+                self.messages.append({"role": "assistant", "content": final_content})
+                # Yield the final content to the UI's character-by-character streamer
+                yield final_content
+                break # Exit the autonomous loop
             else:
-                self.messages.append({"role": "assistant", "content": full_response_content})
+                # Handle cases where the model returns neither content nor tool calls
+                yield "[The model returned an empty response.]"
                 break

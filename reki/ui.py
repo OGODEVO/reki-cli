@@ -1,5 +1,6 @@
 import time
 import random
+import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from rich.console import Console
@@ -72,16 +73,42 @@ class TerminalUI:
         # Print the final, static message
         self.console.print(f"{emoji} [bold]{title}:[/bold] [cyan]{text}[/cyan]")
 
+    def display_tool_call(self, tool_name, tool_args):
+        """Displays a formatted panel for tool calls."""
+        args_str = json.dumps(tool_args, indent=2)
+        panel_content = f"[bold]{tool_name}[/bold]\n[json]{args_str}[/json]"
+        self.console.print(Panel(panel_content, title="[bold]🛠️ Calling Tool[/bold]", border_style="yellow"))
+
     def display_thinking(self):
         return Live(Spinner("dots", text="[bold white]Ω Reki:[/bold white] Thinking..."), console=self.console, transient=True)
 
     def display_response_stream(self, stream):
+        """
+        Manages the entire response streaming process, from initial thinking animation
+        to the final character-by-character text display.
+        """
         self.console.print(f"\n[bold white]Ω Reki:[/bold white]")
         full_response_content = ""
-        with Live(console=self.console, auto_refresh=False) as live_markdown:
-            for chunk in stream:
-                full_response_content += chunk
-                live_markdown.update(Markdown(full_response_content), refresh=True)
+        
+        with Live(console=self.console, auto_refresh=False) as live:
+            # Stage 1: Display the "thinking" spinner immediately
+            spinner = Spinner("moon")
+            live.update(spinner, refresh=True)
+
+            # Stage 2: Wait for the first chunk and then switch to text
+            try:
+                # The generator needs to be advanced once to get the content
+                final_content_generator = next(stream)
+            except StopIteration:
+                # Handle cases where the agent yields nothing
+                final_content_generator = ""
+
+            # Stage 3: Stream the final content character by character
+            for char in final_content_generator:
+                full_response_content += char
+                live.update(Markdown(full_response_content), refresh=True)
+                time.sleep(0.01)
+                
         return full_response_content
 
     def display_error(self, message):
