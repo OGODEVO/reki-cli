@@ -1,4 +1,5 @@
 import time
+import random
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from rich.console import Console
@@ -45,7 +46,31 @@ class TerminalUI:
                 time.sleep(0.1)
 
     def get_user_input(self):
-        return Prompt.ask("\n[bold green]α You:[/bold green]")
+        return Prompt.ask("\n[bold green]α You[/bold green]")
+
+    def prompt_for_model_choice(self):
+        """Displays a custom-designed, multi-line model selection menu."""
+        self.console.print("\n[bold]⚙️  MODEL SELECT[/bold]")
+        self.console.print("━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        self.console.print("[cyan]1.[/cyan] reki-fast  ⚡   (speed mode)")
+        self.console.print("[cyan]2.[/cyan] reki       💬   (balanced mode)")
+        choice = Prompt.ask("❯", choices=["1", "2"], default="1", show_choices=False, show_default=False)
+        return choice
+
+    def display_selection(self, emoji, title, text):
+        """Displays a clean, box-free selection message with a spinning dice animation."""
+        dice_faces = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅']
+        animation_duration = 1.0  # seconds
+        start_time = time.time()
+
+        with Live(console=self.console, transient=True, refresh_per_second=10) as live:
+            while time.time() - start_time < animation_duration:
+                dice_face = random.choice(dice_faces)
+                live.update(f"{dice_face} [bold]{title}:[/bold] [cyan]{text}[/cyan]")
+                time.sleep(0.1)
+
+        # Print the final, static message
+        self.console.print(f"{emoji} [bold]{title}:[/bold] [cyan]{text}[/cyan]")
 
     def display_thinking(self):
         return Live(Spinner("dots", text="[bold white]Ω Reki:[/bold white] Thinking..."), console=self.console, transient=True)

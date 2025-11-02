@@ -32,10 +32,11 @@ def count_tokens(messages, model="gpt-4"):
     return num_tokens
 
 class ChatAgent:
-    def __init__(self, api_key, user_id, system_prompt):
-        self.client = OpenAI(base_url="https://api.novita.ai/openai", api_key=api_key)
+    def __init__(self, api_key, user_id, system_prompt, model_name, api_base_url):
+        self.client = OpenAI(base_url=api_base_url, api_key=api_key)
         self.user_id = user_id
         self.original_system_prompt = system_prompt
+        self.model_name = model_name
         self.messages = [] # Messages will be constructed dynamically
         self.analysis_cache = {} # Cache for the current turn's analysis
         self.tool_emojis = ["📈", "💰", "📊", "💹"]
@@ -84,7 +85,7 @@ class ChatAgent:
         
         try:
             response = self.client.chat.completions.create(
-                model="deepseek/deepseek-v3.2-exp",
+                model=self.model_name,
                 messages=messages_for_summary,
                 temperature=0.5,
                 max_tokens=250
@@ -129,7 +130,7 @@ class ChatAgent:
             for attempt in range(max_retries):
                 try:
                     chat_completion_res = self.client.chat.completions.create(
-                        model="deepseek/deepseek-v3.2-exp", messages=self.messages, tools=self.tools, tool_choice="auto", stream=True, max_tokens=65346, temperature=0.7
+                        model=self.model_name, messages=self.messages, tools=self.tools, tool_choice="auto", stream=True, max_tokens=65346, temperature=0.7
                     )
                     break  # If successful, exit the loop
                 except RateLimitError as e:

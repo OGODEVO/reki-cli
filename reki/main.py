@@ -13,19 +13,47 @@ from agent import ChatAgent, count_tokens
 from ui import TerminalUI
 
 def get_env_vars():
-    novita_api_key = os.environ.get("NOVITA_API_KEY")
-    user_id = os.environ.get("USER_ID", "default_user")
-    return novita_api_key, user_id
+    config = {
+        "user_id": os.environ.get("USER_ID", "default_user"),
+        "services": {
+            "1": {
+                "name": "reki-fast",
+                "api_key": os.environ.get("XAI_API_KEY"),
+                "base_url": os.environ.get("XAI_API_BASE_URL"),
+                "model": os.environ.get("XAI_MODEL")
+            },
+            "2": {
+                "name": "reki",
+                "api_key": os.environ.get("NOVITA_API_KEY"),
+                "base_url": os.environ.get("NOVITA_API_BASE_URL"),
+                "model": os.environ.get("NOVITA_MODEL")
+            }
+        }
+    }
+    return config
 
 def main():
     load_dotenv()
     ui = TerminalUI()
     ui.display_intro()
 
-    novita_api_key, user_id = get_env_vars()
-    if not novita_api_key:
-        ui.display_error("API key for Novita must be set in the .env file.")
+    config = get_env_vars()
+    user_id = config["user_id"]
+
+    # Interactive model selection
+    choice = ui.prompt_for_model_choice()
+    selected_service = config["services"][choice]
+    
+    api_key = selected_service["api_key"]
+    api_base_url = selected_service["base_url"]
+    model_name = selected_service["model"]
+    service_name = selected_service["name"]
+
+    if not api_key or not api_base_url or not model_name:
+        ui.display_error(f"Configuration for {service_name} is missing from your .env file.")
         exit()
+
+    ui.display_selection("🎲", "Model Selected", service_name)
 
     try:
         # Construct the path to system_prompt.txt relative to this file
@@ -47,7 +75,6 @@ def main():
                     entry = json.loads(line)
                     summaries.append(entry.get("summary", ""))
                 except json.JSONDecodeError:
-                    # Handle cases where a line is not valid JSON
                     continue
         memory_content = "\n".join(summaries)
     except FileNotFoundError:
@@ -60,9 +87,9 @@ def main():
     if memory_content:
         system_prompt = f"--- Previous Conversation Summaries ---\n{memory_content}\n\n--- Current Task ---\n{system_prompt}"
 
-    agent = ChatAgent(novita_api_key, user_id, system_prompt)
+    agent = ChatAgent(api_key, user_id, system_prompt, model_name, api_base_url)
 
-    ui.console.print("\nType 'exit' or press Ctrl+C to end the chat.")
+    ui.console.print(f"\n[dim]Type 'exit' or press Ctrl+C to end the chat.[/dim]")
 
     while True:
         try:
