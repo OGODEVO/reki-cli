@@ -34,6 +34,7 @@ def count_tokens(messages, model="gpt-4"):
 class ChatAgent:
     def __init__(self, api_key, user_id, system_prompt):
         self.client = OpenAI(base_url="https://api.novita.ai/openai", api_key=api_key)
+        self.user_id = user_id
         self.original_system_prompt = system_prompt
         self.messages = [] # Messages will be constructed dynamically
         self.analysis_cache = {} # Cache for the current turn's analysis
@@ -74,11 +75,11 @@ class ChatAgent:
 
     def save_memory_entry(self):
         """
-        Generates a summary of the current conversation and appends it to the memory file.
+        Generates a summary of the current conversation and appends it as a JSON object
+        to the memory file.
         """
-        summary_prompt = "Please provide a concise, one-paragraph summary of the key points, decisions, and outcomes from the following conversation history. Focus on information that would be important context for a future conversation."
+        summary_prompt = "Your task is to create a concise, single-paragraph summary of the following conversation for long-term memory. Identify the user's primary goal or question, and the key information or resolution provided by the assistant. Distill the most critical information needed to quickly understand the context of this conversation in the future."
         
-        # Temporarily add the summary request to the messages
         messages_for_summary = self.messages + [{"role": "user", "content": summary_prompt}]
         
         try:
@@ -91,13 +92,20 @@ class ChatAgent:
             
             summary = response.choices[0].message.content.strip()
             
-            # Append the summary to the memory file
+            # Create the metadata dictionary
+            memory_entry = {
+                "timestamp": datetime.now().isoformat(),
+                "user_id": self.user_id,
+                "summary": summary,
+                "conversation_token_count": count_tokens(self.messages)
+            }
+            
+            # Append the JSON object to the memory file
             script_dir = os.path.dirname(os.path.abspath(__file__))
-            memory_path = os.path.join(script_dir, "memory.txt")
+            memory_path = os.path.join(script_dir, "memory.jsonl")
             
             with open(memory_path, "a") as f:
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                f.write(f"\n\n--- Entry: {timestamp} ---\n{summary}")
+                f.write(json.dumps(memory_entry) + "\n")
                 
         except Exception as e:
             # In a real application, you'd want more robust error handling

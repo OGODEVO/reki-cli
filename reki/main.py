@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
@@ -37,9 +38,18 @@ def main():
         exit()
 
     try:
-        memory_path = os.path.join(script_dir, "memory.txt")
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        memory_path = os.path.join(script_dir, "memory.jsonl")
+        summaries = []
         with open(memory_path, "r") as f:
-            memory_content = f.read()
+            for line in f:
+                try:
+                    entry = json.loads(line)
+                    summaries.append(entry.get("summary", ""))
+                except json.JSONDecodeError:
+                    # Handle cases where a line is not valid JSON
+                    continue
+        memory_content = "\n".join(summaries)
     except FileNotFoundError:
         memory_content = ""
 
