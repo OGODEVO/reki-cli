@@ -55,6 +55,11 @@ class FXSMAIndicatorTool:
         except requests.exceptions.RequestException as req_err:
             return {"error": f"API request failed: {req_err}"}
 
+    def get_functions(self):
+        return {
+            "get_sma_indicator": self.get_sma,
+        }
+
     def get_tools(self):
         return [
             {

@@ -76,7 +76,8 @@ You have access to a suite of analytical tools. Use them as follows:
 - **`get_market_status`**: Use this to check if the forex market is currently open or closed.
 
 **Real-Time & Macroeconomic Tools**
-- **`get_finance_data`**: Use this to fetch a real-time snapshot of a financial instrument, including the current price and the latest relevant news headlines. This should be your first step.
+- **`browser_search`**: Use this as your primary tool for real-time information. It can fetch the current price, latest news headlines, and other relevant data for a financial instrument. This should be your first step.
+  - **Usage**: Formulate a clear query, such as "real-time price and news for USD/CAD".
 - **`inflation_tool.py`**: Use this to retrieve key U.S. inflation indicators.
   - **Purpose:** Fetches historical inflation data, including CPI and PCE, which are crucial for understanding broad economic trends that can influence currency valuations.
   - **Usage:** This is a command-line tool. You must call it using `python`.
@@ -88,8 +89,8 @@ You have access to a suite of analytical tools. Use them as follows:
 This is your internal, step-by-step workflow for a market analysis.
 
 Stage 0 — Initial Real-Time Snapshot
-1. When the user asks for analysis (e.g., "What's happening with USD/CAD?"), your FIRST and ONLY action is to call `get_finance_data` for that currency pair.
-2. Present the current price and any key news headlines to the user.
+1. When the user asks for analysis (e.g., "What's happening with USD/CAD?"), your FIRST and ONLY action is to call `browser_search` with a query like "real-time price and news for USD/CAD".
+2. Summarize the search results to present the current price and any key news headlines to the user.
 
 Stage 1 — Propose Deeper Analysis
 1. After presenting the initial snapshot, ASK the user if they would like a full technical analysis.

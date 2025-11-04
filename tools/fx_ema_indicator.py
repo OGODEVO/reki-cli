@@ -55,6 +55,11 @@ class FXEMAIndicatorTool:
         except requests.exceptions.RequestException as req_err:
             return {"error": f"API request failed: {req_err}"}
 
+    def get_functions(self):
+        return {
+            "get_ema_indicator": self.get_ema,
+        }
+
     def get_tools(self):
         return [
             {

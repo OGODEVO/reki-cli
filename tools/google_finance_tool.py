@@ -9,6 +9,11 @@ class GoogleFinanceTool:
             raise ValueError("SERPAPI_API_KEY environment variable not set.")
         self.client = serpapi.Client()
 
+    def get_functions(self):
+        return {
+            "get_finance_data": self.get_finance_data,
+        }
+
     def get_tools(self):
         return [
             {

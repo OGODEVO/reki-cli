@@ -109,7 +109,7 @@ def main():
                 break
 
             if user_input.lower() == "/reset":
-                agent.messages = [{"role": "system", "content": system_prompt}]
+                agent.messages = []
                 ui.display_message("Conversation history has been reset.", "Reset", "yellow")
                 continue
             

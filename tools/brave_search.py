@@ -22,15 +22,15 @@ class BrowserTool:
         self.api_key = os.getenv("BRAVE_API_KEY")
         self.base_url = "https://api.search.brave.com/res/v1/web/search"
 
-    def search(self, query: str) -> List[Dict[str, Any]]:
+    def search(self, query: str) -> List[str]:
         """
-        Performs a web search using the Brave Search API.
+        Performs a web search using the Brave Search API and returns a concise summary.
 
         Args:
             query: The search query.
 
         Returns:
-            A list of dictionaries, where each dictionary represents a search result.
+            A list of strings, each summarizing a search result.
         """
         headers = {
             "Accept": "application/json",
@@ -38,9 +38,32 @@ class BrowserTool:
             "X-Subscription-Token": self.api_key
         }
         params = {"q": query}
-        response = requests.get(self.base_url, headers=headers, params=params)
-        response.raise_for_status()  # Raise an exception for bad status codes
-        return response.json().get("web", {}).get("results", [])
+        try:
+            response = requests.get(self.base_url, headers=headers, params=params, timeout=10)
+            response.raise_for_status()
+            results = response.json().get("web", {}).get("results", [])
+            
+            # Process and truncate the results
+            summaries = []
+            for result in results[:3]:  # Limit to top 3 results
+                title = result.get("title", "No Title")
+                url = result.get("url", "#")
+                description = result.get("description", "")
+                # Create a concise snippet
+                snippet = f"Title: {title}, URL: {url}, Snippet: {description[:100]}..."
+                summaries.append(snippet)
+            
+            return summaries
+            
+        except requests.exceptions.Timeout:
+            return ["Error: The web search timed out after 10 seconds."]
+        except requests.exceptions.RequestException as e:
+            return [f"Error: An error occurred during the web search: {e}"]
+
+    def get_functions(self):
+        return {
+            "browser_search": self.search,
+        }
 
     def get_tools(self) -> List[Dict[str, Any]]:
         """

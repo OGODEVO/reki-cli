@@ -7,7 +7,7 @@ import concurrent.futures
 from datetime import datetime, timedelta
 from openai import OpenAI, RateLimitError
 from tools.brave_search import BrowserTool
-from tools.google_finance_tool import GoogleFinanceTool
+# from tools.google_finance_tool import GoogleFinanceTool
 from tools.fx_sma_indicator import FXSMAIndicatorTool
 from tools.fx_ema_indicator import FXEMAIndicatorTool
 from tools.fx_macd_indicator import FXMACDIndicatorTool
@@ -42,40 +42,49 @@ class ChatAgent:
         self.ui = ui
         self.messages = [] # Messages will be constructed dynamically
         self.analysis_cache = {} # Cache for the current turn's analysis
-        self.tool_emojis = ["📈", "💰", "📊", "💹"]
+        
+        self.tools_metadata = {
+            "browser_search": {"emoji": "🌐", "desc": "Searching the web"},
+            # "get_finance_data": {"emoji": "💹", "desc": "Fetching financial data"},
+            "get_sma_indicator": {"emoji": "📈", "desc": "Calculating SMA"},
+            "get_ema_indicator": {"emoji": "📈", "desc": "Calculating EMA"},
+            "get_macd_indicator": {"emoji": "📊", "desc": "Calculating MACD"},
+            "get_rsi_indicator": {"emoji": "🌡️", "desc": "Calculating RSI"},
+            "get_market_status": {"emoji": "🚦", "desc": "Checking market status"},
+        }
         
         self.browser_tool = BrowserTool()
-        self.google_finance_tool = GoogleFinanceTool()
+        # self.google_finance_tool = GoogleFinanceTool()
         self.fx_sma_indicator_tool = FXSMAIndicatorTool()
         self.fx_ema_indicator_tool = FXEMAIndicatorTool()
         self.fx_macd_indicator_tool = FXMACDIndicatorTool()
         self.fx_rsi_indicator_tool = FXRSIIndicatorTool()
         self.fx_market_status_tool = FXMarketStatusTool()
         
-        self.tools = self._setup_tools()
-        self.available_functions = self._setup_available_functions()
+        self.tools, self.available_functions = self._setup_tools_and_functions()
 
-    def _setup_tools(self):
+    def _setup_tools_and_functions(self):
+        """
+        Dynamically registers tools and their corresponding functions.
+        """
         tools = []
-        tools.extend(self.browser_tool.get_tools())
-        tools.extend(self.google_finance_tool.get_tools())
-        tools.extend(self.fx_sma_indicator_tool.get_tools())
-        tools.extend(self.fx_ema_indicator_tool.get_tools())
-        tools.extend(self.fx_macd_indicator_tool.get_tools())
-        tools.extend(self.fx_rsi_indicator_tool.get_tools())
-        tools.extend(self.fx_market_status_tool.get_tools())
-        return tools
-
-    def _setup_available_functions(self):
-        return {
-            "browser_search": self.browser_tool.search,
-            "get_finance_data": self.google_finance_tool.get_finance_data,
-            "get_sma_indicator": self.fx_sma_indicator_tool.get_sma,
-            "get_ema_indicator": self.fx_ema_indicator_tool.get_ema,
-            "get_macd_indicator": self.fx_macd_indicator_tool.get_macd,
-            "get_rsi_indicator": self.fx_rsi_indicator_tool.get_rsi,
-            "get_market_status": self.fx_market_status_tool.get_status,
-        }
+        available_functions = {}
+        
+        tool_instances = [
+            self.browser_tool,
+            # self.google_finance_tool,
+            self.fx_sma_indicator_tool,
+            self.fx_ema_indicator_tool,
+            self.fx_macd_indicator_tool,
+            self.fx_rsi_indicator_tool,
+            self.fx_market_status_tool
+        ]
+        
+        for tool in tool_instances:
+            tools.extend(tool.get_tools())
+            available_functions.update(tool.get_functions())
+            
+        return tools, available_functions
 
     def save_memory_entry(self, command):
         """
@@ -137,13 +146,18 @@ class ChatAgent:
             print(f"Error saving memory: {e}")
 
     def get_response(self, user_input):
-        # 1. Construct dynamic system prompt and message history
-        dynamic_system_prompt = f"{self.original_system_prompt}"
-        short_term_history = self.messages[-4:]
-        self.messages = [{"role": "system", "content": dynamic_system_prompt}] + short_term_history
+        # 1. Construct message history
+        # If this is the first message of a session, add the system prompt.
+        # The '/reset' command also clears the history, allowing this to trigger again.
+        if not self.messages:
+            self.messages.append({"role": "system", "content": self.original_system_prompt})
+        
+        # Add the new user message to the full conversation history
         self.messages.append({"role": "user", "content": user_input})
 
         # --- Start of Autonomous Loop ---
+        max_retries = 3
+        retry_count = 0
         while True:
             # 2. Call the LLM
             try:
@@ -152,7 +166,8 @@ class ChatAgent:
                     messages=self.messages,
                     tools=self.tools,
                     tool_choice="auto",
-                    temperature=0.7
+                    temperature=0.7,
+                    max_tokens=65536
                 )
                 response_message = response.choices[0].message
             except Exception as e:
@@ -165,25 +180,55 @@ class ChatAgent:
 
             # Case 1: The LLM wants to call tools.
             if tool_calls:
-                # Append the assistant's decision to call tools, but ignore any conversational content
-                self.messages.append(response_message) 
+                # Enforce singular focal: only process the first tool call
+                tool_calls = tool_calls[:1]
+
+                # If the model returned a concatenated/malformed tool-call string, parse only the first embedded call.
+                import types
+
+                def _wrap(obj):
+                    # Wrap dict-like or SDK objects to a simple namespace with .id and .function.{name,arguments}
+                    if isinstance(obj, dict):
+                        fn = obj.get("function", {}) or {}
+                        return types.SimpleNamespace(
+                            id=obj.get("id", f"call_{random.randint(1000,9999)}"),
+                            function=types.SimpleNamespace(name=fn.get("name"), arguments=fn.get("arguments", ""))
+                        )
+                    return obj  # assume SDK-style object; downstream code will access attributes
+
+                first = tool_calls[0]
+                first = _wrap(first)
+
+                # If concatenated markers appear in the function name, extract only the first embedded call.
+                fn_name = getattr(first.function, "name", "") or ""
+                if "<tool_call_begin>" in fn_name or "<tool_sep>" in fn_name:
+                    # find first block and parse "name<tool_sep>json_args"
+                    parts = [p for p in fn_name.split("<tool_call_begin>") if p]
+                    if parts:
+                        block = parts[0].split("<tool_call_end>")[0].strip()
+                        if "<tool_sep>" in block:
+                            name_part, args_part = block.split("<tool_sep>", 1)
+                            first = types.SimpleNamespace(
+                                id=f"call_{random.randint(1000,9999)}",
+                                function=types.SimpleNamespace(name=name_part.strip(), arguments=args_part.strip())
+                            )
+                # Replace tool_calls with a single-element list (singular focal)
+                tool_calls = [first]
+                # --- End of Preprocessing Step ---
+
+                # Append the assistant's decision to call tools to the message history
+                self.messages.append(response_message.model_dump()) 
 
                 def process_tool_call(tool_call):
                     """Helper function to process a single tool call."""
                     function_name = tool_call.function.name
                     try:
-                        # Robustly parse arguments
-                        function_args_str = tool_call.function.arguments
-                        start_brace = function_args_str.find('{')
-                        end_brace = function_args_str.rfind('}')
-                        if start_brace != -1 and end_brace != -1 and start_brace < end_brace:
-                            json_str = function_args_str[start_brace:end_brace+1]
-                            function_args = json.loads(json_str)
-                        else:
-                            raise json.JSONDecodeError("No valid JSON object found.", function_args_str, 0)
+                        # The arguments should already be a valid JSON string from the regex capture
+                        function_args = json.loads(tool_call.function.arguments)
 
                         # Display the tool call in the UI immediately
-                        self.ui.display_tool_call(function_name, function_args)
+                        metadata = self.tools_metadata.get(function_name, {})
+                        self.ui.display_tool_call(function_name, function_args, metadata)
                         
                         # Execute the tool function
                         function_to_call = self.available_functions[function_name]
@@ -205,9 +250,12 @@ class ChatAgent:
                             "content": json.dumps({"error": error_message}),
                         }
 
-                # Execute all tool calls in parallel
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    tool_results = list(executor.map(process_tool_call, tool_calls))
+                # Execute all tool calls sequentially with a delay
+                tool_results = []
+                for tool_call in tool_calls:
+                    result = process_tool_call(tool_call)
+                    tool_results.append(result)
+                    time.sleep(1)  # Add a 1-second delay to respect rate limits
                 
                 # Append all results to the message history
                 for result in tool_results:
@@ -215,49 +263,72 @@ class ChatAgent:
                 
                 # Loop back to the start to call the LLM again with the tool results
                 continue
-
             # Case 1B: The LLM is putting the tool call in the content (fallback)
             if "<tool_calls_begin>" in response_content:
-                self.messages.append(response_message) # Save the model's response
+                self.messages.append(response_message.model_dump()) # Save the model's response
+                
+                tool_results = []
+                # Split the response content to handle multiple tool calls
+                potential_calls = response_content.split("<tool_call_begin>")
+                
+                for call_block in potential_calls:
+                    if "<tool_call_end>" not in call_block:
+                        continue
 
-                # --- Parsing the custom tool call format ---
-                try:
-                    # Extract content between markers
-                    call_str = response_content.split("<tool_call_begin>")[1].split("<tool_call_end>")[0].strip()
-                    
-                    # Split function name and arguments
-                    parts = call_str.split("<tool_sep>")
-                    function_name = parts[0].strip()
-                    
-                    # The arguments part might be empty JSON '{}' or have content
-                    args_str = parts[1].strip() if len(parts) > 1 else "{}"
-                    function_args = json.loads(args_str)
+                    try:
+                        # Extract content for a single tool call
+                        call_str = call_block.split("<tool_call_end>")[0].strip()
+                        
+                        # Skip empty or malformed calls
+                        if not call_str or "<tool_sep>" not in call_str:
+                            continue
+                            
+                        # Split function name and arguments
+                        name_and_args = call_str.split("<tool_sep>")
+                        if len(name_and_args) != 2:
+                            continue
+                            
+                        function_name = name_and_args[0].strip()
+                        args_str = name_and_args[1].strip()
+                        
+                        # Validate function name exists in available functions
+                        if function_name not in self.available_functions:
+                            continue
+                            
+                        # Ensure args_str is proper JSON
+                        try:
+                            function_args = json.loads(args_str)
+                        except json.JSONDecodeError:
+                            continue
 
-                    # --- Executing the tool ---
-                    self.ui.display_tool_call(function_name, function_args)
-                    function_to_call = self.available_functions[function_name]
-                    function_response = function_to_call(**function_args)
+                        # Execute the tool
+                        metadata = self.tools_metadata.get(function_name, {})
+                        self.ui.display_tool_call(function_name, function_args, metadata)
+                        function_to_call = self.available_functions[function_name]
+                        function_response = function_to_call(**function_args)
 
-                    # --- Appending the result ---
-                    tool_result = {
-                        "tool_call_id": f"call_{random.randint(1000, 9999)}", # Generate a random ID
-                        "role": "tool",
-                        "name": function_name,
-                        "content": json.dumps(function_response),
-                    }
-                    self.messages.append(tool_result)
+                        tool_results.append({
+                            "tool_call_id": f"call_{random.randint(1000, 9999)}",
+                            "role": "tool",
+                            "name": function_name,
+                            "content": json.dumps(function_response),
+                        })
 
-                except Exception as e:
-                    error_message = f"Error parsing or executing tool from content: {e}"
-                    self.ui.display_error(error_message)
-                    # Append an error message for the model to see
-                    self.messages.append({
-                        "role": "tool",
-                        "name": function_name,
-                        "content": json.dumps({"error": error_message}),
-                    })
+                    except Exception as e:
+                        error_message = f"Error executing tool {function_name}: {e}"
+                        self.ui.display_error(error_message)
+                        tool_results.append({
+                            "tool_call_id": f"error_{random.randint(1000, 9999)}",
+                            "role": "tool",
+                            "name": "error_handler",
+                            "content": json.dumps({"error": error_message}),
+                        })
+                
+                # Append all collected tool results to the message history
+                for result in tool_results:
+                    self.messages.append(result)
 
-                continue # Loop back to the LLM with the tool result
+                continue # Loop back to the LLM with the tool results
 
             # Case 2: The LLM has finished and is providing the final text response.
             elif response_content:
@@ -268,5 +339,11 @@ class ChatAgent:
                 break # Exit the autonomous loop
             else:
                 # Handle cases where the model returns neither content nor tool calls
-                yield "[The model returned an empty response.]"
-                break
+                retry_count += 1
+                if retry_count < max_retries:
+                    self.ui.display_message(f"Model returned an empty response. Retrying ({retry_count}/{max_retries})...", "Retry", "yellow")
+                    time.sleep(1)  # Optional: wait a moment before retrying
+                    continue
+                else:
+                    yield "[The model is not responding after multiple attempts.]"
+                    break

@@ -73,14 +73,12 @@ class TerminalUI:
         # Print the final, static message
         self.console.print(f"{emoji} [bold]{title}:[/bold] [cyan]{text}[/cyan]")
 
-    def display_tool_call(self, tool_name, tool_args):
-        """Displays a simple, single-line message for tool calls."""
-        # tool_emojis = ["📈", "💰", "📊", "💹", "🛠️", "⚙️", "💡"]
-        # emoji = random.choice(tool_emojis)
-        # # Compact JSON arguments for cleaner display
-        # args_str = json.dumps(tool_args, separators=(',', ':'))
-        # self.console.print(f"{emoji} [bold yellow]Executing Tool:[/bold yellow] [cyan]{tool_name}({args_str})[/cyan]")
-        pass
+    def display_tool_call(self, tool_name, tool_args, metadata):
+        """Displays a formatted message for tool calls, including emoji and description."""
+        emoji = metadata.get("emoji", "🛠️")
+        description = metadata.get("desc", "Executing tool")
+        
+        self.console.print(f"{emoji} [green]{description}:[/green]")
 
     def display_thinking(self):
         return Live(Spinner("dots", text="[bold white]Ω Reki:[/bold white] Thinking..."), console=self.console, transient=True)

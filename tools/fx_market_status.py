@@ -25,6 +25,11 @@ class FXMarketStatusTool:
         except requests.exceptions.RequestException as req_err:
             return {"error": f"API request failed: {req_err}"}
 
+    def get_functions(self):
+        return {
+            "get_market_status": self.get_status,
+        }
+
     def get_tools(self):
         return [
             {
