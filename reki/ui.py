@@ -58,6 +58,15 @@ class TerminalUI:
         choice = Prompt.ask("❯", choices=["1", "2"], default="1", show_choices=False, show_default=False)
         return choice
 
+    def prompt_for_model_change(self):
+        """Displays a custom-designed, multi-line model selection menu for changing models."""
+        self.console.print("\n[bold]⚙️  CHANGE MODEL[/bold]")
+        self.console.print("━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        self.console.print("[cyan]1.[/cyan] reki-fast  ⚡   (speed mode)")
+        self.console.print("[cyan]2.[/cyan] reki       💬   (balanced mode)")
+        choice = Prompt.ask("❯", choices=["1", "2"], default="1", show_choices=False, show_default=False)
+        return choice
+
     def display_selection(self, emoji, title, text):
         """Displays a clean, box-free selection message with a spinning dice animation."""
         dice_faces = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅']
