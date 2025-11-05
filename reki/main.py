@@ -32,16 +32,11 @@ def get_env_vars():
     }
     return config
 
-def main():
-    load_dotenv()
-    ui = TerminalUI()
-    ui.display_intro()
-
-    config = get_env_vars()
+def initialize_agent(config, ui, model_choice_func):
+    """Handles model selection and ChatAgent initialization."""
     user_id = config["user_id"]
-
-    # Interactive model selection
-    choice = ui.prompt_for_model_choice()
+    
+    choice = model_choice_func()
     selected_service = config["services"][choice]
     
     api_key = selected_service["api_key"]
@@ -51,19 +46,18 @@ def main():
 
     if not api_key or not api_base_url or not model_name:
         ui.display_error(f"Configuration for {service_name} is missing from your .env file.")
-        exit()
+        return None
 
     ui.display_selection("🎲", "Model Selected", service_name)
 
     try:
-        # Construct the path to system_prompt.txt relative to this file
         script_dir = os.path.dirname(os.path.abspath(__file__))
         prompt_path = os.path.join(script_dir, "system_prompt.txt")
         with open(prompt_path, "r") as f:
             system_prompt_template = f.read()
     except FileNotFoundError:
         ui.display_error("system_prompt.txt not found in the 'reki' directory.")
-        exit()
+        return None
 
     try:
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -83,9 +77,7 @@ def main():
                     
                     if not is_expired:
                         summaries.append(entry.get("summary", ""))
-
                 except (json.JSONDecodeError, ValueError):
-                    # Handle cases where a line is not valid JSON or timestamp is malformed
                     continue
         memory_content = "\n".join(summaries)
     except FileNotFoundError:
@@ -98,7 +90,17 @@ def main():
     if memory_content:
         system_prompt = f"--- Previous Conversation Summaries ---\n{memory_content}\n\n--- Current Task ---\n{system_prompt}"
 
-    agent = ChatAgent(api_key, user_id, system_prompt, model_name, api_base_url, ui)
+    return ChatAgent(api_key, user_id, system_prompt, model_name, api_base_url, ui)
+
+def main():
+    load_dotenv()
+    ui = TerminalUI()
+    ui.display_intro()
+
+    config = get_env_vars()
+    agent = initialize_agent(config, ui, ui.prompt_for_model_choice)
+    if not agent:
+        exit()
 
     ui.console.print(f"\n[dim]Type 'exit' or press Ctrl+C to end the chat.[/dim]")
 
@@ -116,6 +118,13 @@ def main():
             if user_input.lower().startswith("/save"):
                 agent.save_memory_entry(user_input)
                 ui.display_message("Conversation thread saved to memory.", "Memory Saved", "cyan")
+                continue
+            
+            if user_input.lower() == "/model":
+                new_agent = initialize_agent(config, ui, ui.prompt_for_model_change)
+                if new_agent:
+                    new_agent.messages = agent.messages  # Preserve history
+                    agent = new_agent
                 continue
 
             prompt_tokens = count_tokens(agent.messages)
