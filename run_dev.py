@@ -1,8 +1,13 @@
 import sys
 import time
 import subprocess
+from dotenv import load_dotenv
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+
+# Load environment variables from .env file
+load_dotenv()
+
 
 class ChangeHandler(FileSystemEventHandler):
     """Restarts the script when a .py file is modified."""
