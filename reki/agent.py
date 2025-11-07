@@ -7,6 +7,7 @@ import concurrent.futures
 from datetime import datetime, timedelta
 from openai import OpenAI, RateLimitError
 from tools.brave_search import BrowserTool
+from tools.binance_tool import BinanceTool
 # from tools.google_finance_tool import GoogleFinanceTool
 from tools.fx_sma_indicator import FXSMAIndicatorTool
 from tools.fx_ema_indicator import FXEMAIndicatorTool
@@ -51,6 +52,7 @@ class ChatAgent:
             "get_macd_indicator": {"emoji": "📊", "desc": "Calculating MACD"},
             "get_rsi_indicator": {"emoji": "🌡️", "desc": "Calculating RSI"},
             "get_market_status": {"emoji": "🚦", "desc": "Checking market status"},
+            "get_latest_binance_price": {"emoji": "💰", "desc": "Fetching Binance price"},
         }
         
         self.browser_tool = BrowserTool()
@@ -60,6 +62,7 @@ class ChatAgent:
         self.fx_macd_indicator_tool = FXMACDIndicatorTool()
         self.fx_rsi_indicator_tool = FXRSIIndicatorTool()
         self.fx_market_status_tool = FXMarketStatusTool()
+        self.binance_tool = BinanceTool()
         
         self.tools, self.available_functions = self._setup_tools_and_functions()
 
@@ -77,7 +80,8 @@ class ChatAgent:
             self.fx_ema_indicator_tool,
             self.fx_macd_indicator_tool,
             self.fx_rsi_indicator_tool,
-            self.fx_market_status_tool
+            self.fx_market_status_tool,
+            self.binance_tool
         ]
         
         for tool in tool_instances:
