@@ -137,7 +137,13 @@ class TerminalUI:
         self.console.print(Panel(f"[bold red]{message}[/bold red]", title="[bold red]Error[/bold red]"))
 
     def display_message(self, message, title, style):
-        self.console.print(Panel(f"[bold {style}]{message}[/bold {style}]", title=f"[bold {style}]{title}[/bold {style}]", border_style=style))
+        emoji_map = {
+            "Reset": "🔄",
+            "System": "⚙️",
+            "Memory Saved": "💾"
+        }
+        emoji = emoji_map.get(title, "ℹ️")
+        self.console.print(f"{emoji} [hot_pink3]{message}[/hot_pink3]")
 
     def display_stats(self, response_time, cps, prompt_tokens, completion_tokens, total_tokens):
         stats_text = f"Response Time: {response_time:.2f}s | CPS: {cps:.2f} | Prompt: {prompt_tokens} tokens | Completion: {completion_tokens} tokens | Total: {total_tokens} tokens"
