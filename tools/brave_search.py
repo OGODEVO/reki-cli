@@ -6,6 +6,7 @@ import os
 import requests
 from typing import List, Dict, Any
 from dotenv import load_dotenv
+from bs4 import BeautifulSoup
 
 load_dotenv()
 
@@ -45,12 +46,12 @@ class BrowserTool:
             
             # Process and truncate the results
             summaries = []
-            for result in results[:3]:  # Limit to top 3 results
+            for result in results[:5]:  # Limit to top 5 results
                 title = result.get("title", "No Title")
                 url = result.get("url", "#")
                 description = result.get("description", "")
                 # Create a concise snippet
-                snippet = f"Title: {title}, URL: {url}, Snippet: {description[:100]}..."
+                snippet = f"Title: {title}, URL: {url}, Snippet: {description[:300]}..."
                 summaries.append(snippet)
             
             return summaries
@@ -60,9 +61,46 @@ class BrowserTool:
         except requests.exceptions.RequestException as e:
             return [f"Error: An error occurred during the web search: {e}"]
 
+    def open_url(self, url: str) -> str:
+        """
+        Opens a URL and returns the main content of the webpage.
+
+        Args:
+            url: The URL to open.
+
+        Returns:
+            The main content of the webpage.
+        """
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, 'lxml')
+            
+            # Remove script and style elements
+            for script_or_style in soup(["script", "style"]):
+                script_or_style.decompose()
+            
+            # Get text
+            text = soup.get_text()
+            
+            # Break into lines and remove leading and trailing space on each
+            lines = (line.strip() for line in text.splitlines())
+            # Break multi-headlines into a line each
+            chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+            # Drop blank lines
+            text = '\n'.join(chunk for chunk in chunks if chunk)
+            
+            return text
+            
+        except requests.exceptions.Timeout:
+            return "Error: The request timed out after 10 seconds."
+        except requests.exceptions.RequestException as e:
+            return f"Error: An error occurred while opening the URL: {e}"
+
     def get_functions(self):
         return {
             "browser_search": self.search,
+            "open_url": self.open_url,
         }
 
     def get_tools(self) -> List[Dict[str, Any]]:
@@ -85,6 +123,23 @@ class BrowserTool:
                             },
                         },
                         "required": ["query"],
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "open_url",
+                    "description": "Opens a URL and returns the main content of the webpage.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "url": {
+                                "type": "string",
+                                "description": "The URL to open.",
+                            },
+                        },
+                        "required": ["url"],
                     },
                 },
             },
