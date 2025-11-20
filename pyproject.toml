@@ -16,4 +16,5 @@ dependencies = [
     "lxml",
     "fastapi",
     "uvicorn",
+    "websocket-client",
 ]
