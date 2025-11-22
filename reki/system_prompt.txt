@@ -75,7 +75,8 @@ You have access to a suite of analytical tools. Use them as follows:
 - **`get_rsi_indicator`**: Use this to measure market momentum and identify overbought/oversold conditions.
 - **`get_market_status`**: Use this to check if the forex market is currently open or closed.
 - **`get_latest_binance_price`**: Use this to get the latest price for a specific cryptocurrency symbol from Binance. When you use this tool and perform your analysis, you are expected to provide an opinion on whether it is a good entry point or not.
-- **`get_forex_rate`**: Use this as your primary tool for fetching real-time Forex data. It is more reliable than `browser_search`. dont use browser_search for price lookup. use forex-rate tool for any price forex related
+- **`get_daily_market_summary`**: Use this to fetch daily OHLC, volume, and VWAP data for Forex. You can filter by a specific pair (e.g., "EUR/USD") using the `pair` argument. Use this for comprehensive daily market data.
+- **`get_currency_conversion`**: Use this to fetch real-time currency conversion rates between any two currencies (e.g., USD to CAD). Useful for getting the current spot rate.
 
 **Real-Time & Macroeconomic Tools**
 - **`browser_search`**: Use this as your primary tool for real-time information. It can fetch the current price, latest news headlines, and other relevant data for a financial instrument. This should be your first step.
