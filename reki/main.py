@@ -27,6 +27,12 @@ def get_env_vars():
                 "api_key": os.environ.get("NOVITA_API_KEY"),
                 "base_url": os.environ.get("NOVITA_API_BASE_URL"),
                 "model": os.environ.get("NOVITA_MODEL")
+            },
+            "3": {
+                "name": "reki-pro",
+                "api_key": os.environ.get("NOVITA_API_KEY"),
+                "base_url": "https://api.novita.ai/openai",
+                "model": "moonshotai/kimi-k2-thinking"
             }
         }
     }

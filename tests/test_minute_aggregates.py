@@ -16,10 +16,10 @@ if __name__ == "__main__":
     load_env()
     
     tool = MinuteAggregatesTool()
-    print("Testing get_minute_aggregates for USD/EUR (15 seconds)...")
-    print("This will stream real-time minute bars...")
+    print("Testing get_minute_aggregates for EUR/USD (last 10 bars, 1-minute)...")
+    print("Fetching historical 1-minute bars via REST API...\n")
     
-    result = tool.get_minute_aggregates("USD/EUR", duration_seconds=15)
+    result = tool.get_minute_aggregates("EUR/USD", limit=10, multiplier=1, timespan="minute")
     
     print("\n" + "="*50)
     print("RESULT:")

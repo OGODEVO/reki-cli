@@ -17,4 +17,5 @@ dependencies = [
     "fastapi",
     "uvicorn",
     "websocket-client",
+    "massive",
 ]

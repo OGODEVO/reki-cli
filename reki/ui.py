@@ -55,7 +55,8 @@ class TerminalUI:
         self.console.print("━━━━━━━━━━━━━━━━━━━━━━━━━━")
         self.console.print("[cyan]1.[/cyan] reki-fast  ⚡   (speed mode)")
         self.console.print("[cyan]2.[/cyan] reki       💬   (balanced mode)")
-        choice = Prompt.ask("❯", choices=["1", "2"], default="1", show_choices=False, show_default=False)
+        self.console.print("[cyan]3.[/cyan] reki-pro   ⚖️   (fast and balanced)")
+        choice = Prompt.ask("❯", choices=["1", "2", "3"], default="1", show_choices=False, show_default=False)
         return choice
 
     def prompt_for_model_change(self):
@@ -64,7 +65,8 @@ class TerminalUI:
         self.console.print("━━━━━━━━━━━━━━━━━━━━━━━━━━")
         self.console.print("[cyan]1.[/cyan] reki-fast  ⚡   (speed mode)")
         self.console.print("[cyan]2.[/cyan] reki       💬   (balanced mode)")
-        choice = Prompt.ask("❯", choices=["1", "2"], default="1", show_choices=False, show_default=False)
+        self.console.print("[cyan]3.[/cyan] reki-pro   ⚖️   (fast and balanced)")
+        choice = Prompt.ask("❯", choices=["1", "2", "3"], default="1", show_choices=False, show_default=False)
         return choice
 
     def display_selection(self, emoji, title, text):
