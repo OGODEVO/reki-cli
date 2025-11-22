@@ -7,10 +7,11 @@ import concurrent.futures
 from datetime import datetime, timedelta
 from openai import OpenAI, RateLimitError
 from tools.brave_search import BrowserTool
-from tools.binance_tool import BinanceTool
+# from tools.binance_tool import BinanceTool
 # from tools.forex_tool import ForexTool
 from tools.daily_market_tool import DailyMarketTool
 from tools.currency_conversion_tool import CurrencyConversionTool
+from tools.minute_aggregates_tool import MinuteAggregatesTool
 # from tools.google_finance_tool import GoogleFinanceTool
 from tools.fx_sma_indicator import FXSMAIndicatorTool
 from tools.fx_ema_indicator import FXEMAIndicatorTool
@@ -55,10 +56,11 @@ class ChatAgent:
             "get_macd_indicator": {"emoji": "📊", "desc": "Calculating MACD"},
             "get_rsi_indicator": {"emoji": "🌡️", "desc": "Calculating RSI"},
             "get_market_status": {"emoji": "🚦", "desc": "Checking market status"},
-            "get_latest_binance_price": {"emoji": "💰", "desc": "Fetching Binance price"},
+            # "get_latest_binance_price": {"emoji": "💰", "desc": "Fetching Binance price"},
             # "get_forex_rate": {"emoji": "💱", "desc": "Fetching Forex rate"},
             "get_daily_market_summary": {"emoji": "📊", "desc": "Fetching daily market summary"},
             "get_currency_conversion": {"emoji": "💱", "desc": "Converting currency"},
+            "get_minute_aggregates": {"emoji": "📈", "desc": "Streaming minute aggregates"},
         }
         
         self.browser_tool = BrowserTool()
@@ -68,10 +70,11 @@ class ChatAgent:
         self.fx_macd_indicator_tool = FXMACDIndicatorTool()
         self.fx_rsi_indicator_tool = FXRSIIndicatorTool()
         self.fx_market_status_tool = FXMarketStatusTool()
-        self.binance_tool = BinanceTool()
+        # self.binance_tool = BinanceTool()
         # self.forex_tool = ForexTool()
         self.daily_market_tool = DailyMarketTool()
         self.currency_conversion_tool = CurrencyConversionTool()
+        self.minute_aggregates_tool = MinuteAggregatesTool()
         
         self.tools, self.available_functions = self._setup_tools_and_functions()
 
@@ -90,10 +93,11 @@ class ChatAgent:
             self.fx_macd_indicator_tool,
             self.fx_rsi_indicator_tool,
             self.fx_market_status_tool,
-            self.binance_tool,
+            # self.binance_tool,
             # self.forex_tool,
             self.daily_market_tool,
-            self.currency_conversion_tool
+            self.currency_conversion_tool,
+            self.minute_aggregates_tool
         ]
         
         for tool in tool_instances:
