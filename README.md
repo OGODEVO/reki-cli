@@ -14,44 +14,61 @@ Terminal2 is a Python-based command-line interface (CLI) for interacting with an
 
 ```
 /root/terminal2/
-├───.gitignore
-├───.python-version
-├───gemini.md
-├───main.py
-├───pyproject.toml
-├───README.md
-├───system_prompt.txt
-├───.git/...
-├───build/
-│   ├───bdist.linux-x86_64/...
-│   └───lib/...
-├───terminal2.egg-info/
-└───venv/
-    ├───bin/...
-    ├───include/...
-    └───lib/...
+├── .gitignore
+├── .python-version
+├── gemini.md
+├── pyproject.toml
+├── README.md
+├── run_dev.py
+├── reki/
+│   ├── agent.py
+│   ├── main.py
+│   ├── system_prompt.txt
+│   ├── memory.jsonl
+│   └── ...
+├── tools/
+│   └── ...
+├── tests/
+│   └── ...
+└── venv/
 ```
 
 ## How to Run
 
 1.  **Install Dependencies:**
-    The dependencies are listed in `pyproject.toml`. You can install them using pip:
+    This project uses `pyproject.toml` for dependency management. You can install dependencies using `pip` or `uv` (recommended for speed).
+
+    Using `uv`:
     ```bash
-    pip install rich openai python-dotenv
+    uv pip install .
+    ```
+
+    Using standard `pip`:
+    ```bash
+    pip install .
+    ```
+
+    For development (editable install):
+    ```bash
+    uv pip install -e .
+    # OR
+    pip install -e .
     ```
 
 2.  **Create a `.env` file:**
-    Create a file named `.env` in the root of the project and add your Novita API key:
-    ```
-    NOVITA_API_KEY='your-api-key'
-    ```
+    Create a file named `.env` in the root of the project and add your API keys (see `.env.example`).
 
-3.  **Create `system_prompt.txt`:**
-    Create a file named `system_prompt.txt` and add the system prompt you want to use for the AI model. The string `{current_date}` will be replaced with the current date and time.
+3.  **Run the application:**
+    You can run the application using the development runner (which auto-reloads on changes) or directly.
 
-4.  **Run the application:**
+    **Development Mode (Auto-reload):**
     ```bash
-    python main.py
+    python run_dev.py
+    ```
+
+    **Direct Run:**
+    ```bash
+    python reki/main.py
     ```
 
 ## Future Improvements
