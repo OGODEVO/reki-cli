@@ -116,12 +116,18 @@ class ChatAgent:
         messages_for_summary = self.messages + [{"role": "user", "content": summary_prompt}]
         
         try:
-            response = self.client.chat.completions.create(
-                model=self.model_name,
-                messages=messages_for_summary,
-                temperature=0.5,
-                max_tokens=250
-            )
+            completion_params = {
+                "model": self.model_name,
+                "messages": messages_for_summary,
+                "temperature": 0.7,
+            }
+            
+            if self.model_name.startswith("gpt-5") or self.model_name.startswith("o1"):
+                completion_params["max_completion_tokens"] = 250
+            else:
+                completion_params["max_tokens"] = 250
+
+            response = self.client.chat.completions.create(**completion_params)
             
             summary = response.choices[0].message.content.strip()
             
@@ -181,14 +187,20 @@ class ChatAgent:
         while True:
             # 2. Call the LLM
             try:
-                response = self.client.chat.completions.create(
-                    model=self.model_name,
-                    messages=self.messages,
-                    tools=self.tools,
-                    tool_choice="auto",
-                    temperature=0.7,
-                    max_tokens=65536
-                )
+                completion_params = {
+                    "model": self.model_name,
+                    "messages": self.messages,
+                    "tools": self.tools,
+                    "tool_choice": "auto",
+                    "temperature": 0.7,
+                }
+
+                if self.model_name.startswith("gpt-5") or self.model_name.startswith("o1"):
+                    completion_params["max_completion_tokens"] = 65536
+                else:
+                    completion_params["max_tokens"] = 65536
+
+                response = self.client.chat.completions.create(**completion_params)
                 response_message = response.choices[0].message
             except Exception as e:
                 self.ui.display_error(f"An API error occurred: {e}")
@@ -237,7 +249,27 @@ class ChatAgent:
                 # --- End of Preprocessing Step ---
 
                 # Append the assistant's decision to call tools to the message history
-                self.messages.append(response_message.model_dump()) 
+                # We must ensure the stored message only contains the tool calls we actually process (singular focal),
+                # otherwise the API will error complaining about missing tool outputs.
+                
+                def _tool_call_to_dict(tc):
+                    if hasattr(tc, 'model_dump'):
+                        return tc.model_dump()
+                    if isinstance(tc, dict):
+                        return tc
+                    # Handle SimpleNamespace or similar objects
+                    return {
+                        "id": getattr(tc, "id", ""),
+                        "type": "function",
+                        "function": {
+                            "name": getattr(tc.function, "name", ""),
+                            "arguments": getattr(tc.function, "arguments", "")
+                        }
+                    }
+
+                assistant_msg = response_message.model_dump()
+                assistant_msg["tool_calls"] = [_tool_call_to_dict(t) for t in tool_calls]
+                self.messages.append(assistant_msg) 
 
                 def process_tool_call(tool_call):
                     """Helper function to process a single tool call."""
