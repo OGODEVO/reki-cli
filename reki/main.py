@@ -96,7 +96,10 @@ def initialize_agent(config, ui, model_choice_func):
     if memory_content:
         system_prompt = f"--- Previous Conversation Summaries ---\n{memory_content}\n\n--- Current Task ---\n{system_prompt}"
 
-    return ChatAgent(api_key, user_id, system_prompt, model_name, api_base_url, ui)
+    # Extract Novita config for summarization (Service "2")
+    summarizer_config = config["services"].get("2")
+    
+    return ChatAgent(api_key, user_id, system_prompt, model_name, api_base_url, ui, summarizer_config=summarizer_config)
 
 def main():
     load_dotenv()

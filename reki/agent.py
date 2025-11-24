@@ -39,8 +39,20 @@ def count_tokens(messages, model="gpt-4"):
     return num_tokens
 
 class ChatAgent:
-    def __init__(self, api_key, user_id, system_prompt, model_name, api_base_url, ui):
+    def __init__(self, api_key, user_id, system_prompt, model_name, api_base_url, ui, summarizer_config=None):
         self.client = OpenAI(base_url=api_base_url, api_key=api_key)
+        
+        # Setup summarizer client (default to main client if config not provided)
+        if summarizer_config and summarizer_config.get("api_key"):
+            self.summarizer_client = OpenAI(
+                base_url=summarizer_config.get("base_url"), 
+                api_key=summarizer_config.get("api_key")
+            )
+            self.summarizer_model = summarizer_config.get("model")
+        else:
+            self.summarizer_client = self.client
+            self.summarizer_model = model_name
+
         self.user_id = user_id
         self.original_system_prompt = system_prompt
         self.model_name = model_name
@@ -117,19 +129,25 @@ class ChatAgent:
         
         try:
             completion_params = {
-                "model": self.model_name,
+                "model": self.summarizer_model,
                 "messages": messages_for_summary,
                 "temperature": 0.7,
             }
             
-            if self.model_name.startswith("gpt-5") or self.model_name.startswith("o1"):
-                completion_params["max_completion_tokens"] = 250
+            # Adjust tokens based on the summarizer model, not the main model
+            if self.summarizer_model.startswith("gpt-5") or self.summarizer_model.startswith("o1"):
+                completion_params["max_completion_tokens"] = 2000
             else:
-                completion_params["max_tokens"] = 250
+                completion_params["max_tokens"] = 500
 
-            response = self.client.chat.completions.create(**completion_params)
+            response = self.summarizer_client.chat.completions.create(**completion_params)
             
-            summary = response.choices[0].message.content.strip()
+            summary = response.choices[0].message.content
+            if summary:
+                summary = summary.strip()
+            else:
+                print(f"Warning: Model returned empty summary. Finish reason: {response.choices[0].finish_reason}")
+                summary = "No summary generated."
             
             # --- Expiration Logic ---
             parts = command.lower().split()

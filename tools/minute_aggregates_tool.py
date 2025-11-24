@@ -33,7 +33,7 @@ class MinuteAggregatesTool:
                             },
                             "timespan": {
                                 "type": "string",
-                                "enum": ["minute", "hour", "day", "week", "month", "quarter", "year"],
+                                "enum": ["second", "minute", "hour", "day", "week", "month", "quarter", "year"],
                                 "description": "The size of the time window. Defaults to 'minute'."
                             }
                         },
@@ -65,6 +65,7 @@ class MinuteAggregatesTool:
         # We'll request a bit more time than strictly necessary
         
         timespan_map = {
+            "second": timedelta(seconds=1),
             "minute": timedelta(minutes=1),
             "hour": timedelta(hours=1),
             "day": timedelta(days=1),
@@ -75,7 +76,9 @@ class MinuteAggregatesTool:
         }
         
         delta = timespan_map.get(timespan, timedelta(minutes=1))
-        total_duration = delta * limit * 2 # Double the duration to be safe (holidays, weekends)
+        
+        # Calculate time range based on timespan to ensure we cover enough time
+        total_duration = delta * multiplier * limit * 2 # Double the duration to be safe (holidays, weekends)
         
         end_time = datetime.now()
         start_time = end_time - total_duration
@@ -85,10 +88,33 @@ class MinuteAggregatesTool:
 
         url = f"{self.base_url}/v2/aggs/ticker/{ticker}/range/{multiplier}/{timespan}/{from_ts}/{to_ts}"
         
+        # Scale limit by multiplier and timespan because the API limit applies to base aggregates
+        # not the aggregated bars. We need to scan enough base data to build the requested bars.
+        # Based on empirical testing:
+        # - second/minute: limit counts in base units (seconds/minutes) -> scale 1
+        # - hour: limit counts in minutes -> scale 60
+        # - day: limit counts in days -> scale 1
+        # - week: limit counts in days -> scale 7
+        # - month: limit counts in days (approx 30) -> scale 30
+        # - quarter/year: limit likely counts in days -> scale appropriately
+        timespan_scale = {
+            "second": 1,
+            "minute": 1,
+            "hour": 60,
+            "day": 1,
+            "week": 7,
+            "month": 30,
+            "quarter": 90,
+            "year": 365
+        }
+        
+        scale_factor = timespan_scale.get(timespan, 1)
+        api_limit = limit * multiplier * scale_factor
+        
         params = {
             "adjusted": "true",
             "sort": "desc",
-            "limit": limit,
+            "limit": api_limit,
             "apiKey": self.api_key
         }
 
@@ -111,7 +137,8 @@ class MinuteAggregatesTool:
                 }
 
             formatted_results = []
-            for bar in data["results"]:
+            # Slice results to the originally requested limit
+            for bar in data["results"][:limit]:
                 formatted_results.append({
                     "timestamp": datetime.fromtimestamp(bar["t"] / 1000).strftime('%Y-%m-%d %H:%M:%S'),
                     "open": bar["o"],
