@@ -63,16 +63,16 @@ class ChatAgent:
         self.tools_metadata = {
             "browser_search": {"emoji": "🌐", "desc": "Searching the web"},
             # "get_finance_data": {"emoji": "💹", "desc": "Fetching financial data"},
-            "get_sma_indicator": {"emoji": "📈", "desc": "Calculating SMA"},
+            "get_sma_indicator": {"emoji": "✈️", "desc": "Calculating SMA"},
             "get_ema_indicator": {"emoji": "📈", "desc": "Calculating EMA"},
             "get_macd_indicator": {"emoji": "📊", "desc": "Calculating MACD"},
             "get_rsi_indicator": {"emoji": "🌡️", "desc": "Calculating RSI"},
             "get_market_status": {"emoji": "🚦", "desc": "Checking market status"},
             # "get_latest_binance_price": {"emoji": "💰", "desc": "Fetching Binance price"},
             # "get_forex_rate": {"emoji": "💱", "desc": "Fetching Forex rate"},
-            "get_daily_market_summary": {"emoji": "📊", "desc": "Fetching daily market summary"},
+            "get_daily_market_summary": {"emoji": "📖", "desc": "Fetching daily market summary"},
             "get_currency_conversion": {"emoji": "💱", "desc": "Converting currency"},
-            "get_minute_aggregates": {"emoji": "📈", "desc": "Streaming minute aggregates"},
+            "get_minute_aggregates": {"emoji": "🚀", "desc": "Streaming minute aggregates"},
         }
         
         self.browser_tool = BrowserTool()
