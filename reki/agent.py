@@ -5,6 +5,7 @@ import time
 import tiktoken
 import concurrent.futures
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from openai import OpenAI, RateLimitError
 from tools.brave_search import BrowserTool
 # from tools.binance_tool import BinanceTool
@@ -59,6 +60,7 @@ class ChatAgent:
         self.ui = ui
         self.messages = [] # Messages will be constructed dynamically
         self.analysis_cache = {} # Cache for the current turn's analysis
+        self.last_interaction_time = None # Track the last time the user interacted
         
         self.tools_metadata = {
             "browser_search": {"emoji": "🌐", "desc": "Searching the web"},
@@ -197,6 +199,27 @@ class ChatAgent:
             self.messages.append({"role": "system", "content": self.original_system_prompt})
         
         # Add the new user message to the full conversation history
+        
+        # --- Time Context Injection ---
+        chicago_tz = ZoneInfo("America/Chicago")
+        current_time = datetime.now(chicago_tz)
+        time_str = current_time.strftime("%I:%M %p")
+        
+        time_context = f"Current Time: {time_str}"
+        
+        if self.last_interaction_time:
+            time_diff = current_time - self.last_interaction_time
+            minutes_diff = int(time_diff.total_seconds() / 60)
+            
+            if minutes_diff > 0:
+                time_context += f" | Time since last message: {minutes_diff} minutes"
+        
+        self.last_interaction_time = current_time
+        
+        # Inject time context as a system message before the user message
+        self.messages.append({"role": "system", "content": f"[{time_context}]"})
+        # ------------------------------
+
         self.messages.append({"role": "user", "content": user_input})
 
         # --- Start of Autonomous Loop ---
