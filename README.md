@@ -1,6 +1,6 @@
 <div style="font-family: 'Times New Roman', Times, serif; font-size: 13px;">
 
-# REKI-CLI BETA
+# REKI-CLI BETA ⌨️
 
 REKI-CLI is a Python-based command-line interface (CLI) for interacting with an AI model. It provides a user-friendly and visually rich chat experience in the terminal.
 
