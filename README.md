@@ -1,8 +1,8 @@
 <div style="font-family: 'Times New Roman', Times, serif; font-size: 13px;">
 
-# Terminal2
+# REKI-CLI BETA
 
-Terminal2 is a Python-based command-line interface (CLI) for interacting with an AI model. It provides a user-friendly and visually rich chat experience in the terminal.
+REKI-CLI is a Python-based command-line interface (CLI) for interacting with an AI model. It provides a user-friendly and visually rich chat experience in the terminal.
 
 ## Features
 
@@ -90,11 +90,5 @@ Terminal2 is a Python-based command-line interface (CLI) for interacting with an
     python reki/main.py
     ```
 
-## Future Improvements
-
-*   Add unit tests.
-*   Add error handling for API calls.
-*   Allow the user to select the model.
-*   Add a command-line argument parser for configuration options.
 
 </div>
