@@ -1,3 +1,5 @@
+<div style="font-family: 'Times New Roman', Times, serif; font-size: 13px;">
+
 # Terminal2
 
 Terminal2 is a Python-based command-line interface (CLI) for interacting with an AI model. It provides a user-friendly and visually rich chat experience in the terminal.
@@ -13,7 +15,7 @@ Terminal2 is a Python-based command-line interface (CLI) for interacting with an
 ## Project Structure
 
 ```
-/root/terminal2/
+/root/reki-cli/
 ├── .gitignore
 ├── .python-version
 ├── gemini.md
@@ -58,6 +60,23 @@ Terminal2 is a Python-based command-line interface (CLI) for interacting with an
 2.  **Create a `.env` file:**
     Create a file named `.env` in the root of the project and add your API keys (see `.env.example`).
 
+    **Required Environment Variables:**
+
+    | Variable | Description |
+    | :--- | :--- |
+    | `BRAVE_API_KEY` | API key for Brave Search, used for web search capabilities. |
+    | `MEM0_API_KEY` | API key for Mem0, used for long-term memory storage. |
+    | `USER_ID` | Identifier for the user (default: `default_user`). |
+    | `POLYGON_API_KEY` | API key for Polygon.io, used for financial market data. |
+    | `XAI_API_KEY` | API key for xAI (Grok), used as a model provider. |
+    | `XAI_API_BASE_URL` | Base URL for xAI API (default: `https://api.x.ai/v1`). |
+    | `XAI_MODEL` | Model name for xAI (e.g., `grok-4-fast-reasoning`). |
+    | `NOVITA_API_KEY` | API key for Novita AI, used as a model provider. |
+    | `NOVITA_API_BASE_URL` | Base URL for Novita AI (default: `https://api.novita.ai/openai`). |
+    | `NOVITA_MODEL` | Model name for Novita AI (e.g., `deepseek/deepseek-v3.2-exp`). |
+    | `SERPAPI_API_KEY` | API key for SerpApi, used for Google Finance data. |
+    | `FOREXRATE_API_KEY` | API key for ForexRateAPI (optional, if using archived tool). |
+
 3.  **Run the application:**
     You can run the application using the development runner (which auto-reloads on changes) or directly.
 
@@ -77,3 +96,5 @@ Terminal2 is a Python-based command-line interface (CLI) for interacting with an
 *   Add error handling for API calls.
 *   Allow the user to select the model.
 *   Add a command-line argument parser for configuration options.
+
+</div>
