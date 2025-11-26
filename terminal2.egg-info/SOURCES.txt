@@ -1,8 +1,14 @@
 README.md
-main.py
 pyproject.toml
+helpers/__init__.py
+reki/agent.py
+reki/main.py
+reki/ui.py
 terminal2.egg-info/PKG-INFO
 terminal2.egg-info/SOURCES.txt
 terminal2.egg-info/dependency_links.txt
 terminal2.egg-info/requires.txt
 terminal2.egg-info/top_level.txt
+tests/test_currency_conversion.py
+tests/test_daily_market.py
+tests/test_minute_aggregates.py

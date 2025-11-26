@@ -3,3 +3,11 @@ openai
 python-dotenv
 tiktoken
 requests
+scikit-learn
+watchdog
+beautifulsoup4
+lxml
+fastapi
+uvicorn
+websocket-client
+massive

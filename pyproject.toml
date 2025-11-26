@@ -19,3 +19,6 @@ dependencies = [
     "websocket-client",
     "massive",
 ]
+
+[tool.setuptools]
+packages = ["reki", "helpers"]
