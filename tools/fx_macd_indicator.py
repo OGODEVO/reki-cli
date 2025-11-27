@@ -77,7 +77,7 @@ class FXMACDIndicatorTool:
                             },
                             "timespan": {
                                 "type": "string",
-                                "description": "The size of the time window (e.g., 'day', 'week')."
+                                "description": "The size of the time window (e.g., 'minute', 'hour', 'day', 'week', 'month')."
                             },
                             "short_window": {
                                 "type": "integer",

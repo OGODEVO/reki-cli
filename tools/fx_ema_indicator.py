@@ -76,7 +76,7 @@ class FXEMAIndicatorTool:
                             },
                             "timespan": {
                                 "type": "string",
-                                "description": "The size of the time window (e.g., 'day', 'week', 'month')."
+                                "description": "The size of the time window (e.g., 'minute', 'hour', 'day', 'week', 'month')."
                             },
                             "window": {
                                 "type": "integer",
