@@ -1,0 +1,25 @@
+# Trading Scheduler Configuration
+
+# MT5 API URL (Windows VPS)
+# Set this to your Windows VPS IP:port where MT5 service is running
+mt5_api_url: "http://localhost:8000"  # Change to your VPS IP, e.g., "http://192.168.1.100:8000"
+
+# Scheduler Settings
+scheduler_interval_minutes: 15  # How often to run the trading cycle (in minutes)
+enabled: true  # Set to false to disable trading
+
+# Trading Parameters (Optional - agent will use these as defaults)
+default_lot_size: 0.01  # Micro lot
+max_positions: 1  # Maximum number of concurrent positions
+
+# Symbols to trade (Optional - agent can trade any symbol)
+trading_symbols:
+  - "EURUSD"
+  - "GBPUSD"
+  - "USDJPY"
+
+# Trading Hours (Optional - not yet implemented)
+# trading_hours:
+#   start: "00:00"  # 24/5 trading
+#   end: "23:59"
+#   close_before_weekend: true  # Close all positions on Friday before market close

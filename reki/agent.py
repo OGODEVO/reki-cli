@@ -19,6 +19,8 @@ from tools.fx_ema_indicator import FXEMAIndicatorTool
 from tools.fx_macd_indicator import FXMACDIndicatorTool
 from tools.fx_rsi_indicator import FXRSIIndicatorTool
 from tools.fx_market_status import FXMarketStatusTool
+from tools.mt5_execute_trade import MT5ExecuteTradeTool
+from tools.mt5_check_positions import MT5CheckPositionsTool
 from IPython import get_ipython
 from ui import TerminalUI
 
@@ -75,6 +77,10 @@ class ChatAgent:
             "get_daily_market_summary": {"emoji": "📖", "desc": "Fetching daily market summary"},
             "get_currency_conversion": {"emoji": "💱", "desc": "Converting currency"},
             "get_minute_aggregates": {"emoji": "🚀", "desc": "Streaming minute aggregates"},
+            "execute_mt5_trade": {"emoji": "💸", "desc": "Executing MT5 trade"},
+            "check_mt5_positions": {"emoji": "📋", "desc": "Checking MT5 positions"},
+            "close_mt5_position": {"emoji": "🔒", "desc": "Closing MT5 position"},
+            "close_all_mt5_positions": {"emoji": "🚨", "desc": "Closing all MT5 positions"},
         }
         
         self.browser_tool = BrowserTool()
@@ -89,6 +95,8 @@ class ChatAgent:
         self.daily_market_tool = DailyMarketTool()
         self.currency_conversion_tool = CurrencyConversionTool()
         self.minute_aggregates_tool = MinuteAggregatesTool()
+        self.mt5_execute_tool = MT5ExecuteTradeTool()
+        self.mt5_positions_tool = MT5CheckPositionsTool()
         
         self.tools, self.available_functions = self._setup_tools_and_functions()
 
@@ -111,7 +119,9 @@ class ChatAgent:
             # self.forex_tool,
             self.daily_market_tool,
             self.currency_conversion_tool,
-            self.minute_aggregates_tool
+            self.minute_aggregates_tool,
+            self.mt5_execute_tool,
+            self.mt5_positions_tool
         ]
         
         for tool in tool_instances:
