@@ -16,7 +16,7 @@ load_dotenv()
 app = FastAPI(title="MT5 Trading API", version="1.0.0")
 
 # IP Whitelist - Only allow this IP
-ALLOWED_IPS = ["194.113.64.216"]
+ALLOWED_IPS = ["194.113.64.216", "127.0.0.1", "::1"]
 
 @app.middleware("http")
 async def ip_whitelist_middleware(request: Request, call_next):
@@ -36,6 +36,7 @@ async def ip_whitelist_middleware(request: Request, call_next):
 MT5_LOGIN = int(os.getenv("MT5_LOGIN", "0"))
 MT5_PASSWORD = os.getenv("MT5_PASSWORD", "")
 MT5_SERVER = os.getenv("MT5_SERVER", "")
+MT5_PATH = os.getenv("MT5_PATH", "")
 
 
 # Request/Response Models
@@ -72,7 +73,12 @@ class AccountInfo(BaseModel):
 @app.on_event("startup")
 async def startup():
     """Initialize MT5 connection on startup"""
-    if not mt5.initialize():
+    init_params = {}
+    if MT5_PATH:
+        init_params["path"] = MT5_PATH
+        print(f"Using custom MT5 path: {MT5_PATH}")
+    
+    if not mt5.initialize(**init_params):
         raise RuntimeError(f"MT5 initialize() failed, error code: {mt5.last_error()}")
     
     # Login to account
