@@ -13,10 +13,7 @@ default_lot_size: 0.01  # Micro lot
 max_positions: 1  # Maximum number of concurrent positions
 
 # Symbols to trade (Optional - agent can trade any symbol)
-trading_symbols:
-  - "EURUSD"
-  - "GBPUSD"
-  - "USDJPY"
+trading_symbols: ["XAUUSD.u"]
 
 # Trading Hours (Optional - not yet implemented)
 # trading_hours:

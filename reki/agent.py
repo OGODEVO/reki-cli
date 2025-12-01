@@ -265,6 +265,15 @@ class ChatAgent:
                     completion_params["max_tokens"] = 65536
 
                 response = self.client.chat.completions.create(**completion_params)
+                
+                # Capture usage statistics
+                if hasattr(response, 'usage') and response.usage:
+                    self.last_response_stats = {
+                        'prompt_tokens': response.usage.prompt_tokens,
+                        'completion_tokens': response.usage.completion_tokens,
+                        'total_tokens': response.usage.total_tokens
+                    }
+                    
                 response_message = response.choices[0].message
             except Exception as e:
                 self.ui.display_error(f"An API error occurred: {e}")

@@ -200,6 +200,34 @@ def save_history(agent, ui):
         ui.console.print(f"\n[bold red]❌ Failed to save history: {str(e)}[/bold red]")
         log_to_file(f"Failed to save history: {str(e)}")
 
+import threading
+
+class CommandListener:
+    """Listens for user commands in a separate thread"""
+    def __init__(self):
+        self.paused = False
+        self.running = True
+        self.thread = threading.Thread(target=self._listen, daemon=True)
+        self.thread.start()
+    
+    def _listen(self):
+        while self.running:
+            try:
+                cmd = input().strip().lower()
+                if cmd == "/pause":
+                    self.paused = True
+                    print("\n⏸️  Scheduler PAUSED. Type /resume to continue.")
+                elif cmd == "/resume":
+                    self.paused = False
+                    print("\n▶️  Scheduler RESUMED.")
+                elif cmd == "/status":
+                    status = "PAUSED" if self.paused else "RUNNING"
+                    print(f"\nℹ️  Status: {status}")
+            except EOFError:
+                break
+            except Exception:
+                pass
+
 def main():
     """Main scheduler loop"""
     # Load configuration
@@ -208,6 +236,9 @@ def main():
     
     # Setup agent
     agent, ui = setup_agent()
+    
+    # Start command listener
+    cmd_listener = CommandListener()
     
     # Display Intro
     display_intro(ui.console)
@@ -218,7 +249,7 @@ def main():
     
     ui.console.print(f"[bold green]✅ Agent ready[/bold green]")
     ui.console.print(f"[dim]⏰ Scheduler interval: {interval_minutes} minutes[/dim]")
-    ui.console.print(f"[dim]🎯 Press Ctrl+C to stop the scheduler[/dim]\n")
+    ui.console.print(f"[dim]🎯 Commands: /pause to pause, /resume to resume, Ctrl+C to stop[/dim]\n")
     
     log_to_file("=== SCHEDULER STARTED ===")
     
@@ -233,8 +264,15 @@ def main():
             next_run = datetime.now().timestamp() + wait_seconds
             next_run_dt = datetime.fromtimestamp(next_run)
             
+            # Wait loop with pause check and status display
             with ui.console.status(f"[bold cyan]Waiting for next cycle...[/bold cyan] [dim](Next run: {next_run_dt.strftime('%H:%M:%S')})[/dim]", spinner="dots"):
-                time.sleep(wait_seconds)
+                while datetime.now().timestamp() < next_run:
+                    time.sleep(1)
+                    
+                    # Check if paused (inside the loop to update status if needed)
+                    if cmd_listener.paused:
+                        ui.console.print(f"\r[yellow]⏸️  Scheduler PAUSED. Waiting...[/yellow]", end="")
+                        time.sleep(1)
             
             # Run next cycle
             run_trading_cycle(agent, ui)
@@ -247,6 +285,7 @@ def main():
         log_to_file(f"=== SCHEDULER CRASHED: {str(e)} ===")
         raise
     finally:
+        cmd_listener.running = False
         save_history(agent, ui)
 
 if __name__ == "__main__":
