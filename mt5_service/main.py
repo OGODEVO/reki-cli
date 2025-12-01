@@ -268,16 +268,6 @@ async def place_buy_order(order: OrderRequest):
     
     price = mt5.symbol_info_tick(order.symbol).ask
     
-    # Get the filling mode supported by the symbol
-    filling_type = symbol_info.filling_mode
-    # Use FOK if available, otherwise use the first available mode
-    if filling_type & mt5.SYMBOL_FILLING_FOK:
-        filling = mt5.ORDER_FILLING_FOK
-    elif filling_type & mt5.SYMBOL_FILLING_IOC:
-        filling = mt5.ORDER_FILLING_IOC
-    else:
-        filling = mt5.ORDER_FILLING_RETURN
-    
     request = {
         "action": mt5.TRADE_ACTION_DEAL,
         "symbol": order.symbol,
@@ -290,7 +280,7 @@ async def place_buy_order(order: OrderRequest):
         "magic": 0,
         "comment": order.comment,
         "type_time": mt5.ORDER_TIME_GTC,
-        "type_filling": filling,
+        "type_filling": mt5.ORDER_FILLING_IOC,
     }
     
     result = mt5.order_send(request)
@@ -324,16 +314,6 @@ async def place_sell_order(order: OrderRequest):
     
     price = mt5.symbol_info_tick(order.symbol).bid
     
-    # Get the filling mode supported by the symbol
-    filling_type = symbol_info.filling_mode
-    # Use FOK if available, otherwise use the first available mode
-    if filling_type & mt5.SYMBOL_FILLING_FOK:
-        filling = mt5.ORDER_FILLING_FOK
-    elif filling_type & mt5.SYMBOL_FILLING_IOC:
-        filling = mt5.ORDER_FILLING_IOC
-    else:
-        filling = mt5.ORDER_FILLING_RETURN
-    
     request = {
         "action": mt5.TRADE_ACTION_DEAL,
         "symbol": order.symbol,
@@ -346,7 +326,7 @@ async def place_sell_order(order: OrderRequest):
         "magic": 0,
         "comment": order.comment,
         "type_time": mt5.ORDER_TIME_GTC,
-        "type_filling": filling,
+        "type_filling": mt5.ORDER_FILLING_IOC,
     }
     
     result = mt5.order_send(request)
