@@ -26,30 +26,32 @@ Windows VPS (MT5 + API)  <---HTTP--->  Linux (Reki Scheduler)
 2. **IMPORTANT**: Check "Add Python to PATH" during installation
 3. Verify: Open PowerShell and run `python --version`
 
-### 1.3 Setup MT5 API Service
+### 1.3 Setup MT5 API Service (Git Method - Recommended)
 
-1. **Copy files to Windows VPS**
-   - Transfer the entire `/mt5_service` folder to Windows (e.g., `C:\mt5_service`)
-   - You can use:
-     - USB drive if you have physical access
-     - Remote Desktop file transfer
-     - Cloud storage (Dropbox, Google Drive)
-     - Git clone from your repository
+1.  **Install Git on Windows VPS**
+    - Download and install Git for Windows: [git-scm.com](https://git-scm.com/download/win)
 
-2. **Install dependencies**
-   ```powershell
-   cd C:\mt5_service
-   pip install -r requirements.txt
-   ```
+2.  **Clone your repository**
+    Open PowerShell and run:
+    ```powershell
+    cd C:\
+    git clone <your-repo-url> reki-cli
+    ```
 
-3. **Configure environment**
-   ```powershell
-   # Copy the example env file
-   copy .env.example .env
-   
-   # Edit .env with your MT5 credentials:
-   notepad .env
-   ```
+3.  **Install dependencies**
+    ```powershell
+    cd C:\reki-cli\mt5_service
+    pip install -r requirements.txt
+    ```
+
+4.  **Configure environment**
+    ```powershell
+    # Copy the example env file
+    copy .env.example .env
+    
+    # Edit .env with your MT5 credentials:
+    notepad .env
+    ```
    
    Set these values:
    ```

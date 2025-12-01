@@ -81,6 +81,7 @@ class ChatAgent:
             "check_mt5_positions": {"emoji": "📋", "desc": "Checking MT5 positions"},
             "close_mt5_position": {"emoji": "🔒", "desc": "Closing MT5 position"},
             "close_all_mt5_positions": {"emoji": "🚨", "desc": "Closing all MT5 positions"},
+            "get_account_balance": {"emoji": "💰", "desc": "Checking account balance"},
         }
         
         self.browser_tool = BrowserTool()
@@ -129,7 +130,19 @@ class ChatAgent:
             available_functions.update(tool.get_functions())
             
         return tools, available_functions
-
+    
+    def get_conversation_tokens(self):
+        """Get current token count of conversation history"""
+        return count_tokens(self.messages)
+    
+    def is_context_near_limit(self, threshold=100000):
+        """Check if context is approaching the limit (default 100K out of 128K)"""
+        return self.get_conversation_tokens() > threshold
+    
+    def reset_conversation(self):
+        """Reset conversation history to prevent context window overflow"""
+        self.messages = []
+    
     def save_memory_entry(self, command):
         """
         Generates a summary of the current conversation and appends it as a JSON object

@@ -5,7 +5,8 @@ Runs on Windows VPS alongside MT5 Terminal
 import os
 from datetime import datetime
 from typing import Optional, List
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import MetaTrader5 as mt5
 from dotenv import load_dotenv
@@ -13,6 +14,23 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = FastAPI(title="MT5 Trading API", version="1.0.0")
+
+# IP Whitelist - Only allow this IP
+ALLOWED_IPS = ["194.113.64.216"]
+
+@app.middleware("http")
+async def ip_whitelist_middleware(request: Request, call_next):
+    """Check if client IP is whitelisted"""
+    client_ip = request.client.host
+    
+    if client_ip not in ALLOWED_IPS:
+        return JSONResponse(
+            status_code=403,
+            content={"detail": f"Access denied. IP {client_ip} is not whitelisted."}
+        )
+    
+    response = await call_next(request)
+    return response
 
 # MT5 Credentials from environment
 MT5_LOGIN = int(os.getenv("MT5_LOGIN", "0"))
@@ -127,8 +145,15 @@ async def get_positions(symbol: Optional[str] = None):
     else:
         positions = mt5.positions_get()
     
+    # positions_get returns None if no positions found OR if there's an error
+    # We need to check last_error to distinguish between them
     if positions is None:
-        raise HTTPException(status_code=500, detail=f"Failed to get positions: {mt5.last_error()}")
+        error = mt5.last_error()
+        # Error code 1 or (1, 'Success') means no positions, not an actual error
+        if error == (1, 'Success') or error == 1:
+            return []  # No positions found, return empty list
+        else:
+            raise HTTPException(status_code=500, detail=f"Failed to get positions: {error}")
     
     return [
         PositionResponse(
@@ -323,4 +348,4 @@ async def place_sell_order(order: OrderRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)

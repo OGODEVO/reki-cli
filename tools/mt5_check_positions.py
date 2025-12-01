@@ -58,6 +58,17 @@ class MT5CheckPositionsTool:
                         "properties": {}
                     }
                 }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_account_balance",
+                    "description": "Get current account balance, equity, and margin. Use this to check available funds before opening new trades and to monitor account growth.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {}
+                    }
+                }
             }
         ]
     
@@ -66,7 +77,8 @@ class MT5CheckPositionsTool:
         return {
             "check_mt5_positions": self.check_positions,
             "close_mt5_position": self.close_position,
-            "close_all_mt5_positions": self.close_all_positions
+            "close_all_mt5_positions": self.close_all_positions,
+            "get_account_balance": self.get_account_balance
         }
     
     def check_positions(self, symbol: str = None) -> Dict[str, Any]:
@@ -192,6 +204,45 @@ class MT5CheckPositionsTool:
                 return {
                     "success": False,
                     "error": f"Failed to close all positions: {error_detail}"
+                }
+                
+        except requests.exceptions.ConnectionError:
+            return {
+                "success": False,
+                "error": f"Cannot connect to MT5 API at {self.mt5_api_url}"
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Unexpected error: {str(e)}"
+            }
+    def get_account_balance(self) -> Dict[str, Any]:
+        """
+        Get account balance and equity
+        
+        Returns:
+            Dict with account info
+        """
+        try:
+            url = f"{self.mt5_api_url}/account/info"
+            
+            response = requests.get(url, timeout=10)
+            
+            if response.status_code == 200:
+                result = response.json()
+                return {
+                    "success": True,
+                    "balance": result.get("balance"),
+                    "equity": result.get("equity"),
+                    "margin": result.get("margin"),
+                    "free_margin": result.get("free_margin"),
+                    "currency": result.get("currency", "USD")
+                }
+            else:
+                error_detail = response.json().get("detail", "Unknown error") if response.text else "No response"
+                return {
+                    "success": False,
+                    "error": f"Failed to fetch account info: {error_detail}"
                 }
                 
         except requests.exceptions.ConnectionError:

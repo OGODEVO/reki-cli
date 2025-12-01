@@ -1,6 +1,7 @@
 fastapi
-uvicorn
+uvicorn[standard]
 MetaTrader5
 python-multipart
 python-dotenv
 pydantic
+watchdog

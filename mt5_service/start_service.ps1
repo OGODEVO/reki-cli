@@ -2,6 +2,7 @@
 # Run this script to start the MT5 API service on Windows
 
 Write-Host "Starting MT5 API Service..." -ForegroundColor Green
+Write-Host "Auto-reload enabled - service will restart on code changes" -ForegroundColor Yellow
 
 # Check if Python is installed
 if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
