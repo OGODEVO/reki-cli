@@ -65,6 +65,11 @@ Now call these MT5 tools to check your account:
 
 **Explain what you see**:
 - Do you have open positions? Are they profitable?
+- **CRITICAL - Position History Awareness**: Look at your previous messages in this conversation. If you see that you HAD an open position in the last cycle but now there is NO position:
+  * The position was likely closed automatically by Stop Loss (SL) or Take Profit (TP)
+  * YOU MUST acknowledge this: "The position was automatically closed by [SL/TP]. This was a [WIN/LOSS]."
+  * Check the current price vs your previous SL/TP levels to determine if it was a win or loss
+  * DO NOT just say "I see no open position" - acknowledge what happened to the previous position
 - Do you have enough margin for new trades?
 - What is the exact current price for your calculations?
 

@@ -142,6 +142,40 @@ async def get_account_info():
     )
 
 
+# Helper Functions
+def _get_filling_mode(symbol: str):
+    """
+    Get the appropriate filling mode for a symbol.
+    Different brokers support different filling modes.
+    Try RETURN first (most flexible), then IOC, then FOK.
+    
+    Args:
+        symbol: Trading symbol
+        
+    Returns:
+        Appropriate ORDER_FILLING mode constant
+    """
+    symbol_info = mt5.symbol_info(symbol)
+    if symbol_info is None:
+        # Default to IOC if we can't get symbol info
+        return mt5.ORDER_FILLING_IOC
+    
+    # Get filling mode flags from symbol
+    filling_modes = symbol_info.filling_mode
+    
+    # Priority order: RETURN > IOC > FOK
+    # RETURN is most flexible (allows partial fills and returns remainder)
+    if filling_modes & 4:  # ORDER_FILLING_RETURN flag
+        return mt5.ORDER_FILLING_RETURN
+    elif filling_modes & 1:  # ORDER_FILLING_IOC flag  
+        return mt5.ORDER_FILLING_IOC
+    elif filling_modes & 2:  # ORDER_FILLING_FOK flag
+        return mt5.ORDER_FILLING_FOK
+    
+    # Fallback to IOC
+    return mt5.ORDER_FILLING_IOC
+
+
 # Positions
 @app.get("/positions", response_model=List[PositionResponse])
 async def get_positions(symbol: Optional[str] = None):
@@ -190,6 +224,9 @@ async def close_position(ticket: int):
     close_type = mt5.ORDER_TYPE_SELL if position.type == mt5.ORDER_TYPE_BUY else mt5.ORDER_TYPE_BUY
     price = mt5.symbol_info_tick(position.symbol).bid if position.type == mt5.ORDER_TYPE_BUY else mt5.symbol_info_tick(position.symbol).ask
     
+    # Get the appropriate filling mode for this symbol
+    filling_mode = _get_filling_mode(position.symbol)
+    
     request = {
         "action": mt5.TRADE_ACTION_DEAL,
         "symbol": position.symbol,
@@ -201,7 +238,7 @@ async def close_position(ticket: int):
         "magic": 0,
         "comment": "Reki Close",
         "type_time": mt5.ORDER_TIME_GTC,
-        "type_filling": mt5.ORDER_FILLING_IOC,
+        "type_filling": filling_mode,
     }
     
     result = mt5.order_send(request)
@@ -231,6 +268,9 @@ async def close_all_positions():
             close_type = mt5.ORDER_TYPE_SELL if position.type == mt5.ORDER_TYPE_BUY else mt5.ORDER_TYPE_BUY
             price = mt5.symbol_info_tick(position.symbol).bid if position.type == mt5.ORDER_TYPE_BUY else mt5.symbol_info_tick(position.symbol).ask
             
+            # Get the appropriate filling mode for this symbol
+            filling_mode = _get_filling_mode(position.symbol)
+            
             request = {
                 "action": mt5.TRADE_ACTION_DEAL,
                 "symbol": position.symbol,
@@ -242,7 +282,7 @@ async def close_all_positions():
                 "magic": 0,
                 "comment": "Reki Close All",
                 "type_time": mt5.ORDER_TIME_GTC,
-                "type_filling": mt5.ORDER_FILLING_IOC,
+                "type_filling": filling_mode,
             }
             
             result = mt5.order_send(request)
