@@ -2,7 +2,7 @@
 
 # REKI BETA ⌨️
 
-REKI is a Python-based AI assistant with two modes: an interactive CLI for general use and an automated trading system for XAUUSD (Gold) markets.
+REKI is a Python-based AI assistant with two modes: an interactive CLI for general use and an automated trading system for FX markets.
 
 ---
 
@@ -22,7 +22,7 @@ A rich terminal interface for conversing with an AI model, featuring real-time s
 *   **Streaming Responses:** Real-time chat experience with token-by-token streaming.
 *   **Performance Metrics:** Displays response time and characters per second (CPS) for each response.
 *   **Custom API Endpoint:** Connects to OpenAI-compatible APIs (Novita AI, xAI Grok).
-*   **Model:** Uses `deepseek/deepseek-v3.2-exp` by default.
+*   **Model:** Uses `gpt-5.1` by default.
 
 ### How to Run (CLI Mode)
 
@@ -38,7 +38,7 @@ python reki/main.py
 
 ## 📊 REKI AUTO (Trading Bot)
 
-An autonomous trading agent that analyzes XAUUSD markets every 15 minutes and executes trades based on technical indicators and adaptive aggression strategies.
+An autonomous trading agent that analyzes FX markets every any time frame minutes and executes trades based on technical indicators and adaptive aggression strategies.
 
 ### Demo
 
@@ -53,7 +53,7 @@ An autonomous trading agent that analyzes XAUUSD markets every 15 minutes and ex
 *   **Autonomous 15-Minute Cycles:** Analyzes markets and executes trades automatically.
 *   **Adaptive Aggression:** Adjusts trading strategy based on market tempo (High/Low).
 *   **MT5 Integration:** Direct connectivity to MetaTrader 5 for real-time execution.
-*   **Technical Analysis Tools:** Candlestick data, MACD, RSI, EMA indicators.
+*   **Technical Analysis Tools:** Candlestick data, MACD, RSI, EMA indicators for all FX pairs.
 *   **Position Management:** Automatic Stop Loss and Take Profit handling.
 *   **Performance Analytics:** XAI-powered log analysis for trade review.
 
@@ -63,6 +63,32 @@ An autonomous trading agent that analyzes XAUUSD markets every 15 minutes and ex
 # Start the automated trading scheduler
 python trading_scheduler.py
 ```
+
+### MT5 Service Setup
+
+**Important:** The MT5 service **must run on Windows** because MetaTrader 5 only supports Windows.
+
+**For Mac/Linux Users:**
+- You need a Windows VPS (Virtual Private Server) to run the MT5 service
+- Install MT5 on your Windows VPS
+- Run the MT5 service on the VPS:
+  ```bash
+  cd mt5_service
+  install requirements.txt
+   python main.py
+  ```
+- Set `MT5_API_URL` in your `.env` to point to your VPS (e.g., `http://YOUR_VPS_IP:8000`)
+
+**For Windows Users:**
+- You can run the MT5 service directly on your local machine
+- Install MT5 on your Windows PC
+- Run the MT5 service locally:
+  ```bash
+  cd mt5_service
+  install requirements.txt
+  python main.py
+  ```
+- Set `MT5_API_URL` in your `.env` to `http://localhost:8000`
 
 ---
 
@@ -107,8 +133,14 @@ python trading_scheduler.py
     | `MEM0_API_KEY` | API key for Mem0 (long-term memory) |
     | `POLYGON_API_KEY` | API key for Polygon.io (market data) |
     | `XAI_API_KEY` | API key for xAI (Grok model) |
+    | `XAI_API_BASE_URL` | Base URL for xAI API (default: `https://api.x.ai/v1`) |
+    | `XAI_MODEL` | Model name for xAI (e.g., `grok-4-fast-reasoning`) |
     | `NOVITA_API_KEY` | API key for Novita AI |
+    | `NOVITA_API_BASE_URL` | Base URL for Novita AI (default: `https://api.novita.ai/openai`) |
+    | `NOVITA_MODEL` | Model name for Novita AI (e.g., `deepseek/deepseek-v3.2-exp`) |
     | `SERPAPI_API_KEY` | API key for SerpApi (Google Finance) |
+    | `FOREXRATE_API_KEY` | API key for ForexRateAPI (optional) |
+    | `MT5_API_URL` | URL of your Windows VPS running MT5 API service (e.g., `http://YOUR_VPS_IP:8000`) |
 
 </div>
 
