@@ -4,6 +4,12 @@
 
 REKI-CLI is a Python-based command-line interface (CLI) for interacting with an AI model. It provides a user-friendly and visually rich chat experience in the terminal.
 
+## Demo
+
+<video src="https://user-images.githubusercontent.com/placeholder.mp4" controls="controls" style="max-width: 100%;">
+  Your browser does not support the video tag.
+</video>
+
 ## Features
 
 *   **Rich Terminal Interface:** Uses the `rich` library to display a stylized intro, formatted prompts, and Markdown-rendered AI responses.
