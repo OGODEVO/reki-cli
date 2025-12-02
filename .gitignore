@@ -18,5 +18,5 @@ terminal2.egg-info/
 .gitignore
 memory.jsonl
 \n# Build artifacts\n*.egg-info/
-trading_logs/
+
 history_*.json
