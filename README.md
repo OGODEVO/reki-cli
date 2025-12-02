@@ -1,100 +1,114 @@
 <div style="font-family: 'Times New Roman', Times, serif; font-size: 13px;">
 
-# REKI-CLI BETA ⌨️
+# REKI BETA ⌨️
 
-REKI-CLI is a Python-based command-line interface (CLI) for interacting with an AI model. It provides a user-friendly and visually rich chat experience in the terminal.
+REKI is a Python-based AI assistant with two modes: an interactive CLI for general use and an automated trading system for XAUUSD (Gold) markets.
 
-## Demo
+---
 
-<video src="https://private-user-images.githubusercontent.com/207103351/521085941-1f90cdea-b5e4-4108-86b9-e51258ad3027.mp4?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjQ2NDA4MjksIm5iZiI6MTc2NDY0MDUyOSwicGF0aCI6Ii8yMDcxMDMzNTEvNTIxMDg1OTQxLTFmOTBjZGVhLWI1ZTQtNDEwOC04NmI5LWU1MTI1OGFkMzAyNy5tcDQ_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjUxMjAyJTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI1MTIwMlQwMTU1MjlaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT05MGRlYWIyMjI3ZjAxODFhN2Y3ZDU0NWIwYzBiYWM5YzNhMmEzOTBiMjMzOTBhYjNiYTYxMjNiZDU1YTEzNTI4JlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCJ9.E4G_ixpNX4cJQdv1gRBoxJDbrS6oqlLrxV2cWj7B0eY" controls="controls" style="max-width: 100%;">
+## 🎯 REKI-CLI (Interactive Mode)
+
+A rich terminal interface for conversing with an AI model, featuring real-time streaming responses and visual enhancements.
+
+### Demo
+
+<video src="assets/demo.mp4" controls="controls" style="max-width: 100%;">
   Your browser does not support the video tag.
 </video>
 
-## Features
+### Features
 
 *   **Rich Terminal Interface:** Uses the `rich` library to display a stylized intro, formatted prompts, and Markdown-rendered AI responses.
-*   **Streaming Responses:** Streams responses from the AI model, providing a real-time chat experience.
-*   **Performance Metrics:** Displays the response time and characters per second (CPS) for each AI response.
-*   **Custom API Endpoint:** Connects to a custom OpenAI-compatible API at `https://api.novita.ai/openai`.
-*   **Model:** Uses the `deepseek/deepseek-v3.2-exp` model.
+*   **Streaming Responses:** Real-time chat experience with token-by-token streaming.
+*   **Performance Metrics:** Displays response time and characters per second (CPS) for each response.
+*   **Custom API Endpoint:** Connects to OpenAI-compatible APIs (Novita AI, xAI Grok).
+*   **Model:** Uses `deepseek/deepseek-v3.2-exp` by default.
 
-## Project Structure
+### How to Run (CLI Mode)
+
+```bash
+# Development Mode (Auto-reload)
+python run_dev.py
+
+# Direct Run
+python reki/main.py
+```
+
+---
+
+## 📊 REKI AUTO (Trading Bot)
+
+An autonomous trading agent that analyzes XAUUSD markets every 15 minutes and executes trades based on technical indicators and adaptive aggression strategies.
+
+### Demo
+
+<video src="assets/trading_demo.mp4" controls="controls" style="max-width: 100%;">
+  Your browser does not support the video tag.
+</video>
+
+*Demo video coming soon*
+
+### Features
+
+*   **Autonomous 15-Minute Cycles:** Analyzes markets and executes trades automatically.
+*   **Adaptive Aggression:** Adjusts trading strategy based on market tempo (High/Low).
+*   **MT5 Integration:** Direct connectivity to MetaTrader 5 for real-time execution.
+*   **Technical Analysis Tools:** Candlestick data, MACD, RSI, EMA indicators.
+*   **Position Management:** Automatic Stop Loss and Take Profit handling.
+*   **Performance Analytics:** XAI-powered log analysis for trade review.
+
+### How to Run (Auto Trader)
+
+```bash
+# Start the automated trading scheduler
+python trading_scheduler.py
+```
+
+---
+
+## 📁 Project Structure
 
 ```
 /root/reki-cli/
 ├── .gitignore
-├── .python-version
-├── gemini.md
 ├── pyproject.toml
 ├── README.md
-├── run_dev.py
-├── reki/
+├── reki/                      # CLI agent code
 │   ├── agent.py
 │   ├── main.py
 │   ├── system_prompt.txt
-│   ├── memory.jsonl
-│   └── ...
-├── tools/
-│   └── ...
-├── tests/
-│   └── ...
+│   └── trading_system_prompt.txt
+├── tools/                     # Trading and market tools
+├── mt5_service/              # MT5 API service (runs on Windows)
+├── trading_scheduler.py      # Auto trader entry point
+├── trading_logs/             # Trading session logs
 └── venv/
 ```
 
-## How to Run
+---
+
+## ⚙️ Setup
 
 1.  **Install Dependencies:**
-    This project uses `pyproject.toml` for dependency management. You can install dependencies using `pip` or `uv` (recommended for speed).
-
-    Using `uv`:
     ```bash
     uv pip install .
-    ```
-
-    Using standard `pip`:
-    ```bash
+    # OR
     pip install .
     ```
 
-    For development (editable install):
-    ```bash
-    uv pip install -e .
-    # OR
-    pip install -e .
-    ```
-
 2.  **Create a `.env` file:**
-    Create a file named `.env` in the root of the project and add your API keys (see `.env.example`).
+    See `.env.example` for required API keys.
 
     **Required Environment Variables:**
 
     | Variable | Description |
     | :--- | :--- |
-    | `BRAVE_API_KEY` | API key for Brave Search, used for web search capabilities. |
-    | `MEM0_API_KEY` | API key for Mem0, used for long-term memory storage. |
-    | `USER_ID` | Identifier for the user (default: `default_user`). |
-    | `POLYGON_API_KEY` | API key for Polygon.io, used for financial market data. |
-    | `XAI_API_KEY` | API key for xAI (Grok), used as a model provider. |
-    | `XAI_API_BASE_URL` | Base URL for xAI API (default: `https://api.x.ai/v1`). |
-    | `XAI_MODEL` | Model name for xAI (e.g., `grok-4-fast-reasoning`). |
-    | `NOVITA_API_KEY` | API key for Novita AI, used as a model provider. |
-    | `NOVITA_API_BASE_URL` | Base URL for Novita AI (default: `https://api.novita.ai/openai`). |
-    | `NOVITA_MODEL` | Model name for Novita AI (e.g., `deepseek/deepseek-v3.2-exp`). |
-    | `SERPAPI_API_KEY` | API key for SerpApi, used for Google Finance data. |
-    | `FOREXRATE_API_KEY` | API key for ForexRateAPI (optional, if using archived tool). |
-
-3.  **Run the application:**
-    You can run the application using the development runner (which auto-reloads on changes) or directly.
-
-    **Development Mode (Auto-reload):**
-    ```bash
-    python run_dev.py
-    ```
-
-    **Direct Run:**
-    ```bash
-    python reki/main.py
-    ```
-
+    | `BRAVE_API_KEY` | API key for Brave Search |
+    | `MEM0_API_KEY` | API key for Mem0 (long-term memory) |
+    | `POLYGON_API_KEY` | API key for Polygon.io (market data) |
+    | `XAI_API_KEY` | API key for xAI (Grok model) |
+    | `NOVITA_API_KEY` | API key for Novita AI |
+    | `SERPAPI_API_KEY` | API key for SerpApi (Google Finance) |
 
 </div>
+
