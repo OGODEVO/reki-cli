@@ -1,0 +1,140 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                          REKI CLI - HELP & FEATURES                          ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+REKI is a powerful AI assistant with two operational modes:
+  • Interactive CLI Mode - General-purpose chat interface
+  • Auto Trading Mode - Autonomous FX trading agent
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📋 AVAILABLE COMMANDS
+
+  /help              Display this help message
+  /clear             Clear the conversation history
+  /reset             Reset the conversation and start fresh
+  /save              Save current conversation to file
+  /model             Switch between available AI models (GPT-5.1, Grok, DeepSeek)
+  /stats             Show token usage statistics
+  /exit, /quit       Exit the application
+  
+═══════════════════════════════════════════════════════════════════════════════
+
+🛠️  BUILT-IN FEATURES
+
+  ✓ Rich Terminal UI
+    - Syntax-highlighted responses
+    - Markdown rendering
+    - Animated text streaming
+    - Performance metrics (CPS, latency)
+
+  ✓ Memory & Context
+    - Long-term conversation memory
+    - Context-aware responses
+    - Automatic conversation summarization
+    - History persistence
+
+  ✓ Web Integration
+    - Real-time web search (Brave Search API)
+    - Google Finance data (SerpApi)
+    - Market data access (Polygon.io)
+
+  ✓ FX Trading Tools
+    - MT5 integration for live trading
+    - Technical indicators (MACD, RSI, EMA)
+    - Candlestick data analysis
+    - Position management
+    - Risk calculation
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎯 USAGE EXAMPLES
+
+  General Chat:
+    → "What's the latest news on AI?"
+    → "Explain quantum computing"
+    → "Write a Python script to parse JSON"
+
+  Trading Analysis:
+    → "Analyze XAUUSD chart for the last 4 hours"
+    → "What's the current trend on EUR/USD?"
+    → "Show me MACD and RSI for GBP/JPY"
+
+  Code Assistance:
+    → "Debug this Python function: [paste code]"
+    → "Optimize this algorithm"
+    → "Explain this error message"
+
+═══════════════════════════════════════════════════════════════════════════════
+
+⚙️  CONFIGURATION
+
+  Environment Variables (see .env.example):
+    OPENAI_API_KEY       - Main agent model (GPT-5.1)
+    XAI_API_KEY         - Alternative model (Grok)
+    NOVITA_API_KEY      - Alternative model (DeepSeek)
+    BRAVE_API_KEY       - Web search
+    POLYGON_API_KEY     - Market data
+    SERPAPI_API_KEY     - Google Finance
+    MT5_API_URL         - Trading execution (Windows VPS)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🤖 AUTO TRADING MODE
+
+  Start the autonomous trading agent:
+    python trading_scheduler.py
+
+  Features:
+    ✓ 15-minute automated cycles
+    ✓ Adaptive aggression based on market tempo
+    ✓ Technical analysis with multiple indicators
+    ✓ Automatic position management (SL/TP)
+    ✓ Performance logging and XAI analysis
+
+  Trading Commands (scheduler controls):
+    /pause             Pause the scheduler
+    /resume            Resume automated trading
+    /status            Check scheduler status
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📊 TECHNICAL INDICATORS AVAILABLE
+
+  • Candlestick Data     - OHLC price action
+  • MACD                 - Moving Average Convergence Divergence
+  • RSI                  - Relative Strength Index
+  • EMA                  - Exponential Moving Average
+  • VWAP                 - Volume Weighted Average Price
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🔧 TROUBLESHOOTING
+
+  Issue: "Cannot connect to MT5 API"
+  → Ensure MT5 service is running on Windows VPS
+  → Check MT5_API_URL in .env file
+  → Verify firewall settings allow port 8000
+
+  Issue: "API key invalid"
+  → Verify API keys in .env file
+  → Check for extra spaces or quotes
+  → Ensure .env is in project root
+
+  Issue: "Model not responding"
+  → Check internet connection
+  → Verify API credits/quota
+  → Try alternative model (XAI or Novita)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📚 ADDITIONAL RESOURCES
+
+  Documentation:  README.md
+  Configuration:  .env.example
+  System Prompt:  reki/system_prompt.txt
+  Trading Prompt: reki/trading_system_prompt.txt
+
+═══════════════════════════════════════════════════════════════════════════════
+
+For more information, visit: https://github.com/OGODEVO/reki-cli

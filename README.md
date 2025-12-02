@@ -42,11 +42,9 @@ An autonomous trading agent that analyzes FX markets every any time frame minute
 
 ### Demo
 
-<video src="assets/trading_demo.mp4" controls="controls" style="max-width: 100%;">
+<video src="https://private-user-images.githubusercontent.com/207103351/521095576-82a7491e-4895-4beb-9aac-97eb1b4b6ba3.mp4?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjQ2NDM0MTYsIm5iZiI6MTc2NDY0MzExNiwicGF0aCI6Ii8yMDcxMDMzNTEvNTIxMDk1NTc2LTgyYTc0OTFlLTQ4OTUtNGJlYi05YWFjLTk3ZWIxYjRiNmJhMy5tcDQ_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjUxMjAyJTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI1MTIwMlQwMjM4MzZaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT1mNDdjODA0NDVhYmUyMTNhNDhiYjhjZjJkN2YzZGNiMmY1YjgxOGNkYTg2YWEwMWVlNWZlYTFiZGQ2MTA2YjY1JlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCJ9.0bPaTgC73rja75axSvubxVhoyYG3Xt8gy0JyK1sIzFc" controls="controls" style="max-width: 100%;">
   Your browser does not support the video tag.
 </video>
-
-*Demo video coming soon*
 
 ### Features
 
@@ -129,8 +127,8 @@ python trading_scheduler.py
 
     | Variable | Description |
     | :--- | :--- |
+    | `OPENAI_API_KEY` | API key for OpenAI (used for main agent) |
     | `BRAVE_API_KEY` | API key for Brave Search |
-    | `MEM0_API_KEY` | API key for Mem0 (long-term memory) |
     | `POLYGON_API_KEY` | API key for Polygon.io (market data) |
     | `XAI_API_KEY` | API key for xAI (Grok model) |
     | `XAI_API_BASE_URL` | Base URL for xAI API (default: `https://api.x.ai/v1`) |
