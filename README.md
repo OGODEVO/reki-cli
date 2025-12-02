@@ -6,7 +6,7 @@ REKI-CLI is a Python-based command-line interface (CLI) for interacting with an 
 
 ## Demo
 
-<video src="assets/demo.mp4" controls="controls" style="max-width: 100%;">
+<video src="https://private-user-images.githubusercontent.com/207103351/521085941-1f90cdea-b5e4-4108-86b9-e51258ad3027.mp4?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjQ2NDA4MjksIm5iZiI6MTc2NDY0MDUyOSwicGF0aCI6Ii8yMDcxMDMzNTEvNTIxMDg1OTQxLTFmOTBjZGVhLWI1ZTQtNDEwOC04NmI5LWU1MTI1OGFkMzAyNy5tcDQ_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjUxMjAyJTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI1MTIwMlQwMTU1MjlaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT05MGRlYWIyMjI3ZjAxODFhN2Y3ZDU0NWIwYzBiYWM5YzNhMmEzOTBiMjMzOTBhYjNiYTYxMjNiZDU1YTEzNTI4JlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCJ9.E4G_ixpNX4cJQdv1gRBoxJDbrS6oqlLrxV2cWj7B0eY" controls="controls" style="max-width: 100%;">
   Your browser does not support the video tag.
 </video>
 
