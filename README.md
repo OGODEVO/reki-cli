@@ -12,7 +12,7 @@ A rich terminal interface for conversing with an AI model, featuring real-time s
 
 ### Demo
 
-<video src="assets/demo.mp4" controls="controls" style="max-width: 100%;">
+<video src="https://private-user-images.githubusercontent.com/207103351/521088768-ecd0783b-a169-4fff-844d-407120ae3623.mp4?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjQ2NDE2MDIsIm5iZiI6MTc2NDY0MTMwMiwicGF0aCI6Ii8yMDcxMDMzNTEvNTIxMDg4NzY4LWVjZDA3ODNiLWExNjktNGZmZi04NDRkLTQwNzEyMGFlMzYyMy5tcDQ_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjUxMjAyJTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI1MTIwMlQwMjA4MjJaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT00OTViNmFjOGQ3MDc3NGFmMzAzN2RkYTE1NDYyMTFhYTMwOWYxMzE1OTZlOTc4OTJjNGZiYWNiYzcxNGI3YzkwJlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCJ9.lEoOfoFIDFjFRhl7eOX6Zl9by8CBd6BqeTPypT3609g" controls="controls" style="max-width: 100%;">
   Your browser does not support the video tag.
 </video>
 
