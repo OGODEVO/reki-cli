@@ -19,4 +19,4 @@ terminal2.egg-info/
 memory.jsonl
 \n# Build artifacts\n*.egg-info/
 
-history_*.json
+

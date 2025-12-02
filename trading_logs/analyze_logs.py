@@ -31,6 +31,53 @@ def format_log_for_analyst(log_content):
     """
     return log_content
 
+def format_json_history(json_content):
+    """
+    Format JSON conversation history for the LLM analyst.
+    Converts the structured JSON into a readable conversational format.
+    """
+    try:
+        history = json.loads(json_content)
+        formatted = "[TRADING BOT CONVERSATION HISTORY]\n\n"
+        
+        for i, msg in enumerate(history):
+            role = msg.get("role", "unknown")
+            
+            if role == "system":
+                content = msg.get("content", "")
+                formatted += f"--- SYSTEM ---\n{content}\n\n"
+            
+            elif role == "user":
+                content = msg.get("content", "")
+                formatted += f"--- USER REQUEST ---\n{content}\n\n"
+            
+            elif role == "assistant":
+                # Check if this is a tool call or regular response
+                tool_calls = msg.get("tool_calls")
+                content = msg.get("content")
+                
+                if tool_calls:
+                    formatted += "--- ASSISTANT (Tool Calls) ---\n"
+                    for tool_call in tool_calls:
+                        func = tool_call.get("function", {})
+                        formatted += f"Tool: {func.get('name', 'unknown')}\n"
+                        formatted += f"Arguments: {func.get('arguments', '')}\n"
+                    formatted += "\n"
+                
+                if content:
+                    formatted += f"--- ASSISTANT (Response) ---\n{content}\n\n"
+            
+            elif role == "tool":
+                tool_name = msg.get("name", "unknown")
+                content = msg.get("content", "")
+                formatted += f"--- TOOL RESULT ({tool_name}) ---\n{content}\n\n"
+        
+        return formatted
+    except json.JSONDecodeError as e:
+        return f"[ERROR: Failed to parse JSON history: {e}]\n{json_content}"
+    except Exception as e:
+        return f"[ERROR: Failed to format JSON history: {e}]\n{json_content}"
+
 def analyze_log(log_path, analyst_prompt_template, reki_rules):
     """Analyze a single log file using XAI"""
     log_filename = Path(log_path).name
@@ -47,8 +94,13 @@ def analyze_log(log_path, analyst_prompt_template, reki_rules):
     if not log_content.strip():
         console.print(f"[yellow]Warning: {log_filename} is empty, skipping[/yellow]")
         return None
-        
-    formatted_history = format_log_for_analyst(log_content)
+    
+    # Format based on file type
+    if log_path.endswith('.json'):
+        formatted_history = format_json_history(log_content)
+    else:
+        formatted_history = format_log_for_analyst(log_content)
+
     
     # Prepare the prompt
     system_prompt = analyst_prompt_template.replace("{reki_system_prompt}", reki_rules)
@@ -67,7 +119,7 @@ def analyze_log(log_path, analyst_prompt_template, reki_rules):
             {"role": "user", "content": user_message}
         ],
         "model": os.getenv("XAI_MODEL", "grok-4-1-fast-reasoning"),
-        "stream": true,
+        "stream": False,
         "temperature": 0.2  # Low temperature for analytical precision
     }
     
@@ -118,14 +170,23 @@ def main():
         console.print(f"[bold red]Error loading prompts: {e}[/bold red]")
         return
 
-    # Find log files (in current dir)
-    log_files = sorted(glob.glob(str(base_dir / "trading_*.log")))
+    # Target specific files for 2025-12-02
+    target_files = [
+        base_dir / "trading_2025-12-02.log",
+        base_dir / "history_2025-12-02_17-06-53.json"
+    ]
+    
+    # Filter to only existing files
+    log_files = [str(f) for f in target_files if f.exists()]
     
     if not log_files:
-        console.print("[yellow]No log files found in trading_logs/[/yellow]")
+        console.print("[yellow]No target files found for 2025-12-02[/yellow]")
+        console.print(f"[yellow]Expected files: {[f.name for f in target_files]}[/yellow]")
         return
         
-    console.print(f"[green]Found {len(log_files)} log files.[/green]")
+    console.print(f"[green]Found {len(log_files)} file(s) to analyze.[/green]")
+    for log_file in log_files:
+        console.print(f"  - {Path(log_file).name}")
     
     # Process each log
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
