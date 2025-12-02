@@ -2,7 +2,7 @@
 
 # REKI BETA ⌨️
 
-REKI is a Python-based AI assistant with two modes: an interactive CLI for general use and an automated trading system for FX markets.
+REKI is a Python-based AI assistant with two modes: an interactive CLI for text to text Fx market analysis use and an automated trading system for FX markets.
 
 ---
 
