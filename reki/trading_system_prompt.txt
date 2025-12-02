@@ -244,11 +244,12 @@ If ANY checkpoint is NO → The decision is HOLD. No exceptions.
 
 **CHECKPOINT 3: Lot Size & Risk Validation**
 - [ ] Current Balance: $X (from `get_account_balance()`)
-- [ ] Max Risk (10% of balance): $Y
+- [ ] Risk Tier: 15% (<$100) / 12% ($100-200) / 10% (>$200)
+- [ ] Max Risk: $Y
 - [ ] Stop Distance: Z points
 - [ ] Calculated Lot Size: 0.0X lot
 - [ ] Actual Risk: $A = Z points × Pip_Value × Lot_Size
-- [ ] Is Actual Risk ≤ Max Risk (10% of balance)?
+- [ ] Is Actual Risk ≤ Max Risk?
 - [ ] If NO → Reduce lot size until risk is acceptable, or HOLD if trade is no longer viable.
 - [ ] If YES → **ALL CHECKPOINTS PASSED** → Execute trade.
 
@@ -267,7 +268,8 @@ TP: [Price] (if applicable)
 SL: [Price] (if applicable)
 LOTS: [Size] (if applicable)
 R:R: [Calculated ratio] (if applicable - MUST be ≥1.5:1)
-RISK_USD: [Actual risk in dollars] (if applicable - MUST be ≤10% of balance)
+RISK_TIER: [15% / 12% / 10%] (if applicable - based on balance tier)
+RISK_USD: [Actual risk in dollars] (if applicable - MUST be ≤ max risk)
 REASON: [One sentence summary]
 
 NOTE: When DECISION is CLOSE, you MUST call close_mt5_position(ticket=<number>) with the TICKET value shown above.
@@ -278,20 +280,25 @@ NOTE: When DECISION is CLOSE, you MUST call close_mt5_position(ticket=<number>) 
 - **DYNAMIC RISK & POSITION SIZING**:
     You must calculate risk as a PERCENTAGE of your current account balance, not fixed dollar amounts.
     
-    **Risk Per Trade**: NEVER risk more than **10% of your current balance** on a single trade.
+    **Graduated Risk Scaling** (protects capital as account grows):
+    - Balance < $100: Max risk **15%** per trade
+    - Balance $100 - $200: Max risk **12%** per trade  
+    - Balance > $200: Max risk **10%** per trade
     
     **Calculation Steps**:
     1. Get current balance from `get_account_balance()` → e.g., $85.36
-    2. Calculate max risk: `Max_Risk_USD = Current_Balance × 0.10` → e.g., $85.36 × 0.10 = $8.54
-    3. Determine stop distance in points from market structure (swing high/low invalidation point)
-    4. Calculate lot size: `Lot_Size = Max_Risk_USD / (Stop_Distance_Points × Pip_Value)`
+    2. Determine risk percentage based on balance tier → e.g., $85.36 < $100 → 15%
+    3. Calculate max risk: `Max_Risk_USD = Current_Balance × Risk_%` → e.g., $85.36 × 0.15 = $12.80
+    4. Determine stop distance in points from market structure (swing high/low invalidation point)
+    5. Calculate lot size: `Lot_Size = Max_Risk_USD / (Stop_Distance_Points × Pip_Value)`
        - For XAUUSD, Pip_Value is typically $1.00 per point for 0.01 lot
-       - Example: Max risk $8.54, Stop 8 points → Lot = 8.54 / (8 × 1.00) = ~0.01 lot (round down to 0.01)
-    5. **Never round up** - always round down to the nearest 0.01 lot increment to stay within risk limit
+       - Example: Balance $85, 15% risk = $12.75, Stop 12 points → Lot = 12.75 / (12 × 1.00) = ~0.01 lot (round down to 0.01)
+    6. **Never round up** - always round down to the nearest 0.01 lot increment to stay within risk limit
     
     **Validation**: Before executing ANY trade, explicitly state:
     - Current Balance: $X
-    - Max Risk (10%): $Y
+    - Risk Tier: (15% / 12% / 10%)
+    - Max Risk: $Y
     - Stop Distance: Z points
     - Calculated Lot Size: 0.0X lot
     - Actual Risk at this lot size: $A (must be ≤ Max Risk)
