@@ -6,7 +6,7 @@ REKI-CLI is a Python-based command-line interface (CLI) for interacting with an 
 
 ## Demo
 
-<video src="https://user-images.githubusercontent.com/placeholder.mp4" controls="controls" style="max-width: 100%;">
+<video src="assets/demo.mp4" controls="controls" style="max-width: 100%;">
   Your browser does not support the video tag.
 </video>
 
