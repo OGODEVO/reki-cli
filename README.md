@@ -1,6 +1,6 @@
 <div style="font-family: 'Times New Roman', Times, serif; font-size: 13px;">
 
-# REKI BETA ⌨️
+# REKI BETA 0.7 ⌨️
 
 REKI is a Python-based AI assistant with two modes: an interactive CLI for text to text Fx market analysis use and an automated trading system for FX markets.
 
