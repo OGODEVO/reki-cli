@@ -4,13 +4,14 @@ MT5 Execute Trade Tool - For Reki agent to execute trades via Windows VPS API
 import os
 import requests
 from typing import Dict, Any
+from reki.config import config
 
 
 class MT5ExecuteTradeTool:
     """Tool for executing trades through MT5 API"""
     
     def __init__(self):
-        self.mt5_api_url = os.getenv("MT5_API_URL", "http://localhost:8000")
+        self.mt5_api_url = config.get("trading.mt5.api_url", "http://localhost:8000")
     
     def get_tools(self):
         """Return tool definitions for the agent"""

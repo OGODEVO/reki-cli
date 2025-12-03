@@ -1,0 +1,34 @@
+# Reki Trading Bot Configuration
+
+# API Configuration
+api:
+  openai:
+    base_url: "https://api.openai.com/v1"
+    model: "gpt-5-1"  # Default model
+    # api_key is loaded from OPENAI_API_KEY environment variable
+
+# Trading Configuration
+trading:
+  mt5:
+    api_url: "http://localhost:8000"  # Default to localhost, override with MT5_API_URL env var
+  
+  symbols: ["XAUUSD"]
+  
+  defaults:
+    lot_size: 0.01
+    max_positions: 1
+    risk_reward_ratio: 2.0
+
+# Scheduler Configuration
+scheduler:
+  interval_minutes: 15
+  enabled: true
+
+# System Configuration
+system:
+  timezone: "America/Chicago"
+  user_id: "Reki0.7"
+  paths:
+    logs: "trading_logs"
+    memory: "reki/memory.jsonl"
+    system_prompt: "reki/trading_system_prompt.txt"

@@ -23,6 +23,7 @@ from tools.mt5_execute_trade import MT5ExecuteTradeTool
 from tools.mt5_check_positions import MT5CheckPositionsTool
 from IPython import get_ipython
 from ui import TerminalUI
+from reki.config import config
 
 def count_tokens(messages, model="gpt-4"):
     """Return the number of tokens used by a list of messages."""
@@ -205,8 +206,14 @@ class ChatAgent:
                 "expires_at": expires_at
             }
             
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            memory_path = os.path.join(script_dir, "memory.jsonl")
+            memory_path_str = config.get("system.paths.memory", "reki/memory.jsonl")
+            # If path is relative, make it relative to project root (parent of reki dir)
+            if not os.path.isabs(memory_path_str):
+                 # reki/agent.py is in reki/
+                 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                 memory_path = os.path.join(project_root, memory_path_str)
+            else:
+                 memory_path = memory_path_str
             
             with open(memory_path, "a") as f:
                 f.write(json.dumps(memory_entry) + "\n")
@@ -224,7 +231,8 @@ class ChatAgent:
         # Add the new user message to the full conversation history
         
         # --- Time Context Injection ---
-        chicago_tz = ZoneInfo("America/Chicago")
+        timezone_str = config.get("system.timezone", "America/Chicago")
+        chicago_tz = ZoneInfo(timezone_str)
         current_time = datetime.now(chicago_tz)
         time_str = current_time.strftime("%I:%M %p")
         

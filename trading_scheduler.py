@@ -23,40 +23,32 @@ sys.path.insert(0, str(Path(__file__).parent / "reki"))
 
 from reki.agent import ChatAgent
 from reki.ui import TerminalUI
+from reki.config import config
 
-# Load environment variables
+# Load environment variables (still needed for .env file loading if used by other libs, 
+# but config module handles its own env vars)
 load_dotenv()
-
-def load_config():
-    """Load trading configuration"""
-    config_path = Path(__file__).parent / "trading_config.yaml"
-    if config_path.exists():
-        with open(config_path, "r") as f:
-            return yaml.safe_load(f)
-    return {
-        "scheduler_interval_minutes": 15,
-        "enabled": True
-    }
 
 def load_trading_prompt():
     """Load the trading system prompt"""
-    prompt_path = Path(__file__).parent / "reki" / "trading_system_prompt.txt"
+    prompt_path = Path(__file__).parent / config.get("system.paths.system_prompt", "reki/trading_system_prompt.txt")
     with open(prompt_path, "r") as f:
         return f.read()
 
 def setup_agent():
     """Initialize the Reki agent for trading"""
-    # Get API configuration
-    api_key = os.getenv("OPENAI_API_KEY")
-    api_base_url = os.getenv("OPENAI_API_BASE_URL", "https://api.openai.com/v1")
-    model_name = os.getenv("OPENAI_MODEL", "gpt-5.1")
-    user_id = os.getenv("USER_ID", "trading_bot")
+    # Get API configuration from config
+    api_key = config.get("api.openai.api_key")
+    api_base_url = config.get("api.openai.base_url", "https://api.openai.com/v1")
+    model_name = config.get("api.openai.model", "gpt-4o")
+    user_id = config.get("system.user_id", "trading_bot")
     
     # Load trading system prompt
     trading_prompt_template = load_trading_prompt()
     
     # Inject current date
-    chicago_tz = ZoneInfo("America/Chicago")
+    timezone_str = config.get("system.timezone", "America/Chicago")
+    chicago_tz = ZoneInfo(timezone_str)
     current_date = datetime.now(chicago_tz).strftime("%A, %d %B %Y %I:%M:%S %p")
     trading_prompt = trading_prompt_template.replace("{current_date}", current_date)
     
@@ -85,7 +77,8 @@ def setup_agent():
 
 def log_to_file(message):
     """Log trading activities to file"""
-    log_dir = Path(__file__).parent / "trading_logs"
+    log_dir_name = config.get("system.paths.logs", "trading_logs")
+    log_dir = Path(__file__).parent / log_dir_name
     log_dir.mkdir(exist_ok=True)
     
     log_file = log_dir / f"trading_{datetime.now().strftime('%Y-%m-%d')}.log"
@@ -184,7 +177,8 @@ import json
 def save_history(agent, ui):
     """Save conversation history to file"""
     try:
-        log_dir = Path(__file__).parent / "trading_logs"
+        log_dir_name = config.get("system.paths.logs", "trading_logs")
+        log_dir = Path(__file__).parent / log_dir_name
         log_dir.mkdir(exist_ok=True)
         
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -231,8 +225,7 @@ class CommandListener:
 def main():
     """Main scheduler loop"""
     # Load configuration
-    config = load_config()
-    interval_minutes = config.get("scheduler_interval_minutes", 15)
+    interval_minutes = config.get("scheduler.interval_minutes", 15)
     
     # Setup agent
     agent, ui = setup_agent()
@@ -243,7 +236,7 @@ def main():
     # Display Intro
     display_intro(ui.console)
     
-    if not config.get("enabled", True):
+    if not config.get("scheduler.enabled", True):
         ui.console.print("[bold yellow]⚠️  Trading is DISABLED in config. Set 'enabled: true' to start trading.[/bold yellow]")
         return
     
