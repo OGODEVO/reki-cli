@@ -37,5 +37,14 @@ Output a detailed Markdown report covering the following sections:
 ## 5. Recommendations
 - What should be changed in Reki's system prompt to fix the flaws identified above?
 
+## 6. Specific User Questions
+1. **Strengths & Weaknesses:** Analyze the model's strengths and weaknesses based on this session.
+2. **Greed Analysis:** Determine if the model is being "greedy" regarding the Risk:Reward ratio goal.
+3. **Specific Scenario Analysis:** There was a time the profit was $16 on a $90 account (approx 17% gain). That was a good position.
+   - Did the model hold too long looking for a higher target?
+   - Should the model have batched/scaled out?
+   - Was the token/position size too much?
+   - What do you propose to improve this behavior?
+
 === TONE ===
 Be professional, critical, and objective. Do not be polite. Focus on the logic and the data.

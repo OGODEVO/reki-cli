@@ -23,6 +23,15 @@ def load_log_file(path):
     with open(path, "r") as f:
         return f.read()
 
+def load_log_segment(path, start_line, end_line):
+    """Load specific lines from a log file (1-based indexing)"""
+    with open(path, "r") as f:
+        lines = f.readlines()
+        # Adjust for 0-based indexing, and handle potential out of bounds
+        start_idx = max(0, start_line - 1)
+        end_idx = min(len(lines), end_line)
+        return "".join(lines[start_idx:end_idx])
+
 def format_log_for_analyst(log_content):
     """
     Format plain text log content for the LLM analyst.
@@ -78,34 +87,24 @@ def format_json_history(json_content):
     except Exception as e:
         return f"[ERROR: Failed to format JSON history: {e}]\n{json_content}"
 
-def analyze_log(log_path, analyst_prompt_template, reki_rules):
-    """Analyze a single log file using XAI"""
-    log_filename = Path(log_path).name
-    console.print(f"[bold blue]Analyzing {log_filename}...[/bold blue]")
+def analyze_log(log_content, json_history_content, analyst_prompt_template, reki_rules):
+    """Analyze the specific log segment and history using XAI"""
     
-    # Load and format the log content
-    try:
-        log_content = load_log_file(log_path)
-    except Exception as e:
-        console.print(f"[red]Error: Could not read log file {log_filename}: {e}[/red]")
-        return None
-    
-    # If the log is empty, skip it
-    if not log_content.strip():
-        console.print(f"[yellow]Warning: {log_filename} is empty, skipping[/yellow]")
-        return None
-    
-    # Format based on file type
-    if log_path.endswith('.json'):
-        formatted_history = format_json_history(log_content)
-    else:
-        formatted_history = format_log_for_analyst(log_content)
+    # Format the contents
+    formatted_log = format_log_for_analyst(log_content)
+    formatted_history = format_json_history(json_history_content)
 
-    
     # Prepare the prompt
     system_prompt = analyst_prompt_template.replace("{reki_system_prompt}", reki_rules)
     
-    user_message = f"Here is the conversation history for the trading session ({log_filename}):\n\n{formatted_history}"
+    user_message = f"""Here is the data for the trading session:
+
+    LOG SEGMENT (Relevant Execution Logs):
+    {formatted_log}
+
+    CONVERSATION HISTORY (Reasoning & Decisions):
+    {formatted_history}
+    """
     
     # Call XAI API
     headers = {
@@ -120,15 +119,16 @@ def analyze_log(log_path, analyst_prompt_template, reki_rules):
         ],
         "model": os.getenv("XAI_MODEL", "grok-4-1-fast-reasoning"),
         "stream": False,
-        "temperature": 0.2  # Low temperature for analytical precision
+        "temperature": 0.2
     }
     
     try:
+        console.print("[bold blue]Sending request to XAI API...[/bold blue]")
         response = requests.post(
             f"{os.getenv('XAI_API_BASE_URL', 'https://api.x.ai/v1')}/chat/completions",
             headers=headers, 
             json=payload, 
-            timeout=120
+            timeout=180 # Increased timeout for large context
         )
         
         if response.status_code != 200:
@@ -170,50 +170,41 @@ def main():
         console.print(f"[bold red]Error loading prompts: {e}[/bold red]")
         return
 
-    # Target specific files for 2025-12-02
-    target_files = [
-        base_dir / "trading_2025-12-02.log",
-        base_dir / "history_2025-12-02_17-06-53.json"
-    ]
+    # Specific File Paths
+    log_file_path = base_dir / "trading_2025-12-03.log"
+    json_file_path = base_dir / "history_2025-12-03_22-06-53.json"
     
-    # Filter to only existing files
-    log_files = [str(f) for f in target_files if f.exists()]
-    
-    if not log_files:
-        console.print("[yellow]No target files found for 2025-12-02[/yellow]")
-        console.print(f"[yellow]Expected files: {[f.name for f in target_files]}[/yellow]")
+    if not log_file_path.exists() or not json_file_path.exists():
+        console.print("[bold red]Error: Target files not found![/bold red]")
         return
-        
-    console.print(f"[green]Found {len(log_files)} file(s) to analyze.[/green]")
-    for log_file in log_files:
-        console.print(f"  - {Path(log_file).name}")
+
+    console.print(f"[green]Loading log segment from {log_file_path.name} (Lines 1429-5845)...[/green]")
+    log_segment = load_log_segment(log_file_path, 1429, 5845)
     
-    # Process each log
+    console.print(f"[green]Loading history from {json_file_path.name}...[/green]")
+    json_history = load_log_file(json_file_path)
+    
+    # Process
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    combined_report = f"# Reki Trading Analysis Report\nGenerated: {timestamp}\nModel: {os.getenv('XAI_MODEL')}\n\n"
     
     with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"), console=console) as progress:
-        task = progress.add_task("[cyan]Processing logs...", total=len(log_files))
+        task = progress.add_task("[cyan]Analyzing...", total=1)
         
-        for log_file in log_files:
-            filename = Path(log_file).name
-            progress.update(task, description=f"Analyzing {filename}...")
-            
-            analysis = analyze_log(log_file, analyst_prompt, reki_rules)
-            
-            if analysis:
-                report_section = f"\n\n{'='*50}\n## Analysis of {filename}\n{'='*50}\n\n{analysis}\n"
-                combined_report += report_section
-            
-            progress.advance(task)
-            
-    # Save final report
-    report_path = reports_dir / f"analysis_report_{timestamp}.md"
-    with open(report_path, "w") as f:
-        f.write(combined_report)
+        analysis = analyze_log(log_segment, json_history, analyst_prompt, reki_rules)
         
-    console.print(f"\n[bold green]✅ Analysis complete![/bold green]")
-    console.print(f"Report saved to: [link=file://{report_path}]{report_path}[/link]")
+        progress.advance(task)
+            
+    if analysis:
+        report_content = f"# Reki Trading Analysis Report (Specific)\nGenerated: {timestamp}\nModel: {os.getenv('XAI_MODEL')}\n\n"
+        report_content += f"## Analysis of Specific Session\n\n{analysis}\n"
+        
+        # Save final report
+        report_path = reports_dir / f"analysis_report_specific_{timestamp}.md"
+        with open(report_path, "w") as f:
+            f.write(report_content)
+            
+        console.print(f"\n[bold green]✅ Analysis complete![/bold green]")
+        console.print(f"Report saved to: [link=file://{report_path}]{report_path}[/link]")
 
 if __name__ == "__main__":
     main()
