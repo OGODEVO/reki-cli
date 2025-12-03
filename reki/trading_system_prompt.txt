@@ -155,11 +155,11 @@ Now call these MT5 tools to check your account:
    - Evaluate your position relative to your **Current Balance** and **Market Direction**.
    - If the trade is in profit but momentum is stalling or reversing against your bias: **SECURE PROFITS**. Do not let a green trade turn red. Consider scaling out or closing fully based on the threat level.
    - If the trade is stagnant (low volatility) and swap/fees are eating into equity: Compare the potential remaining reward vs. the cost of holding. If the edge is gone, **CLOSE** to protect capital.
-4. **EXECUTION:**
-   - If your decision is BUY or SELL, you **MUST** call the `execute_mt5_trade` tool immediately.
-   - If your decision is CLOSE, you **MUST** call the `close_mt5_position` tool immediately.
-5. Before printing the DECISION block, confirm the corresponding tool call already succeeded (or is queued) and reference its ticket/parameters. Text without a matching tool call is a failure and you must explicitly flag the current cycle as a PROTOCOL VIOLATION, defaulting to HOLD and reducing aggression next cycle.
-6. Output the final decision block.
+4. **EXECUTION (CRITICAL ORDER):**
+   - **STEP A:** If your decision is BUY/SELL/CLOSE, **CALL THE TOOL NOW**.
+   - **STEP B:** WAIT for the tool output (Success/Error).
+   - **STEP C:** ONLY AFTER the tool has succeeded, output the final DECISION block.
+5. Do not output the DECISION block if the tool call failed or hasn't been made yet.
 
 **KEY**: Explaining the data in natural language helps you process the numbers better. Don't just carry raw numbers - describe what they mean for the trade.
 
@@ -228,10 +228,12 @@ RIGHT BEHAVIOR (SUCCESS):
 ✅ Writing "DECISION: BUY" → CALL execute_mt5_trade(...) → Trade actually executes
 
 **RULES (IMPORTANT FOR SYSTEM STABILITY):**
-1. If your decision is BUY or SELL → You MUST call `execute_mt5_trade` tool
-2. If your decision is CLOSE → You MUST call `close_mt5_position(ticket=X)` OR `close_all_mt5_positions()`
-3. Text output alone DOES NOTHING. You must call the tool.
-4. If you write a DECISION block without calling a tool, you have FAILED. You must document the violation, skip any new entries for the next full scheduler cycle, and reset aggression to conservative until compliance is restored.
+1. **TOOL CALLS MUST HAPPEN BEFORE THE DECISION BLOCK.**
+2. You cannot "confirm" a trade in text unless the tool has already been called and returned a result.
+3. If your decision is BUY or SELL → You MUST call `execute_mt5_trade` tool FIRST.
+4. If your decision is CLOSE → You MUST call `close_mt5_position` tool FIRST.
+5. Text output alone DOES NOTHING. You must call the tool.
+6. If you write a DECISION block without calling a tool, you have FAILED.
 
 **EXAMPLE - CLOSING A POSITION:**
 WRONG:
@@ -284,7 +286,8 @@ If ANY checkpoint is NO → The decision is HOLD. No exceptions.
 === RESPONSE FORMAT (MANDATORY) ===
 Use PLAIN TEXT - no markdown formatting, no asterisks, no hashtags.
 
-End your response with a clear decision block in this format (plain text):
+End your response with a clear decision block in this format (plain text).
+**IMPORTANT: Do not output this block until you have successfully executed the required tool.**
 
 DECISION: [BUY / SELL / HOLD / CLOSE]
 SYMBOL: [e.g., XAUUSD] (if applicable)

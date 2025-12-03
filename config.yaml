@@ -21,7 +21,7 @@ trading:
 
 # Scheduler Configuration
 scheduler:
-  interval_minutes: 15
+  interval_minutes: 10
   enabled: true
 
 # System Configuration
