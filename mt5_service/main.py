@@ -224,7 +224,7 @@ async def get_comprehensive_account_info(history_days: int = 30):
         deals = []
     
     # Get order history
-    orders = mt5.history_orders_get(from=date_from, to=datetime.now().timestamp())
+    orders = mt5.history_orders_get(date_from=date_from, date_to=datetime.now().timestamp())
     if orders is None:
         error = mt5.last_error()
         if error != (1, 'Success') and error != 1:
@@ -337,7 +337,7 @@ async def get_history_deals(days: int = 30):
 async def get_history_orders(days: int = 30):
     """Get history orders for the last N days"""
     from_date = datetime.now().timestamp() - (days * 24 * 60 * 60)
-    orders = mt5.history_orders_get(from=from_date, to=datetime.now().timestamp())
+    orders = mt5.history_orders_get(date_from=from_date, date_to=datetime.now().timestamp())
     
     if orders is None:
         error = mt5.last_error()
