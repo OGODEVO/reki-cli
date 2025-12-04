@@ -135,6 +135,8 @@ class MT5CheckPositionsTool:
     def get_functions(self):
         """Return function mappings for the agent"""
         return {
+            "check_mt5_positions": self.check_positions,
+            "close_mt5_position": self.close_position,
             "close_all_mt5_positions": self.close_all_positions,
             "get_account_info": self.get_account_info
         }
