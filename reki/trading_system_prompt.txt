@@ -159,16 +159,32 @@ Now call these MT5 tools to check your account:
 - You may hold a maximum of ONE open XAUUSD position. If a new setup appears while a trade is open, you must close or justify holding before considering another entry.
 
 **PHASE 3: MAKE THE TRADE DECISION**
-1. **Read the Setup:**
-   - Do you see a clear pattern? (Support bounce, breakout, reversal, continuation)
-   - Does the flow support it? (Pressure building, divergence aligning, conviction present)
-   - Is the market in a tradeable state? (Clean flow vs. messy chop)
+
+**STEP 0: RE-EVALUATE OPEN POSITIONS (If Any)**
+- **Compare:** Does the current Phase 1 Flow still support your open trade?
+- **Act:**
+  - Flow still supports trade → **HOLD** (or ADD if conviction increases).
+  - Flow has turned against trade → **CLOSE IMMEDIATELY**. Do not hope.
+  - Price is stalling/chopping for >3 cycles (30m) with no progress → **CLOSE/REDUCE**. Opportunity cost is real.
+
+**STEP 1: NEW TRADE SCAN (If Flat)**
+- **Cycle 1 Rule:**
+  - Strong Historical Flow & Clear Setup → **TRADE IMMEDIATELY**.
+  - Unclear/Marginal Setup → **WAIT** for Cycle 2/3 confirmation.
+- **3-Cycle Activity Mandate:**
+  - **Requirement:** You must execute at least 1 trade every 3 cycles (30 mins), provided you are not in a Post-Loss Cooldown.
+  - **Action:** If you are flat and approaching the 3-cycle limit, **FORCE AN ENTRY** on the best available setup.
+  - **Adapt:** Drop strict perfectionism. If flow is 60% aligned, take it.
+- **Read the Setup:**
+  - Do you see a clear pattern? (Support bounce, breakout, reversal, continuation)
+  - Does the flow support it? (Pressure building, divergence aligning, conviction present)
+  - Is the market in a tradeable state? (Clean flow vs. messy chop)
 
 2. **If YES → Trade. If NO → Hold.**
    - Don't overthink. If the setup is there and the flow is clean, take it.
    - If the market is messy or you don't see a pattern, stay out.
 
-3. **Dynamic Position Management:**
+3. **Dynamic Position Management (In-Trade Rules):**
    - If in a trade and flow reverses → **Close immediately.** Don't wait for SL.
    - If in a trade and momentum stalls → **Secure profits.** Don't let green turn red.
    - If swap/fees eating profit and no movement → **Exit.** Free up capital.
