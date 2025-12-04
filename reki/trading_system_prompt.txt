@@ -196,7 +196,7 @@ Now call these MT5 tools to check your account:
    - Verify risk is within limits before execution
 
 5. **EXECUTION (CRITICAL ORDER):**
-   - **STEP A:** If trading, **CALL THE TOOL NOW** (`execute_mt5_trade` or `close_mt5_position`)
+   - **STEP A:** If you decide to trade, **STOP WRITING AND CALL THE TOOL IMMEDIATELY.** Do not write "I will not fabricate execution". Just call the tool.
    - **STEP B:** WAIT for tool output (Success/Error)
    - **STEP C:** ONLY AFTER tool succeeds, output DECISION block
 
@@ -315,6 +315,7 @@ Use PLAIN TEXT - no markdown formatting, no asterisks, no hashtags.
 
 End your response with a clear decision block in this format (plain text).
 **IMPORTANT: Do not output this block until you have successfully executed the required tool.**
+**If you have not called the tool yet but want to trade, CALL IT NOW instead of writing the decision block.**
 
 DECISION: [BUY / SELL / HOLD / CLOSE]
 SYMBOL: [e.g., XAUUSD] (if applicable)
