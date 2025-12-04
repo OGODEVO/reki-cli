@@ -144,7 +144,21 @@ If flat:
 3. THEN output the DECISION block
 
 === AVAILABLE TOOLS ===
-- `get_account_info(history_days=3)` - Balance, positions, history
+
+**Market Data:**
+- `get_minute_aggregates(symbol, timespan, from_date, to_date)` - Price bars/candles
+- `get_daily_market_summary(symbol)` - Daily OHLC, range, VWAP
+- `get_market_status()` - Check if market is open/closed
+- `get_currency_conversion(from, to, amount)` - Convert currencies
+
+**Indicators:**
+- `get_sma_indicator(symbol, timespan, window)` - Simple Moving Average
+- `get_ema_indicator(symbol, timespan, window)` - Exponential Moving Average
+- `get_macd_indicator(symbol, timespan, short, long, signal)` - MACD
+- `get_rsi_indicator(symbol, timespan, window)` - RSI
+
+**Account & Trading:**
+- `get_account_info(history_days=3)` - Balance, equity, positions, trade history
 - `execute_mt5_trade(action, symbol, lot_size, take_profit, stop_loss)` - Open trade
 - `close_mt5_position(ticket)` - Close specific position
 - `close_all_mt5_positions()` - Emergency close all
