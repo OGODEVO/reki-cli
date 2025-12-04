@@ -3,7 +3,7 @@ MT5 FastAPI Service - Minimal Trade Execution API
 Runs on Windows VPS alongside MT5 Terminal
 """
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional, List
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -215,8 +215,9 @@ async def get_comprehensive_account_info(history_days: int = 30):
         positions = []
     
     # Get closed trades (deals)
-    date_from = datetime.now().timestamp() - (history_days * 24 * 60 * 60)
-    deals = mt5.history_deals_get(date_from=date_from, date_to=datetime.now().timestamp())
+    date_from = datetime.now() - timedelta(days=history_days)
+    date_to = datetime.now()
+    deals = mt5.history_deals_get(date_from, date_to)
     if deals is None:
         error = mt5.last_error()
         if error != (1, 'Success') and error != 1:
@@ -224,7 +225,7 @@ async def get_comprehensive_account_info(history_days: int = 30):
         deals = []
     
     # Get order history
-    orders = mt5.history_orders_get(date_from=date_from, date_to=datetime.now().timestamp())
+    orders = mt5.history_orders_get(date_from, date_to)
     if orders is None:
         error = mt5.last_error()
         if error != (1, 'Success') and error != 1:
@@ -300,8 +301,9 @@ async def get_comprehensive_account_info(history_days: int = 30):
 @app.get("/history/deals", response_model=List[HistoryDeal])
 async def get_history_deals(days: int = 30):
     """Get history deals (closed trades) for the last N days"""
-    date_from = datetime.now().timestamp() - (days * 24 * 60 * 60)
-    deals = mt5.history_deals_get(date_from=date_from, date_to=datetime.now().timestamp())
+    date_from = datetime.now() - timedelta(days=days)
+    date_to = datetime.now()
+    deals = mt5.history_deals_get(date_from, date_to)
     
     if deals is None:
         error = mt5.last_error()
@@ -336,8 +338,9 @@ async def get_history_deals(days: int = 30):
 @app.get("/history/orders", response_model=List[HistoryOrder])
 async def get_history_orders(days: int = 30):
     """Get history orders for the last N days"""
-    from_date = datetime.now().timestamp() - (days * 24 * 60 * 60)
-    orders = mt5.history_orders_get(date_from=from_date, date_to=datetime.now().timestamp())
+    date_from = datetime.now() - timedelta(days=days)
+    date_to = datetime.now()
+    orders = mt5.history_orders_get(date_from, date_to)
     
     if orders is None:
         error = mt5.last_error()
