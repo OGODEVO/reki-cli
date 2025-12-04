@@ -67,6 +67,53 @@ class AccountInfo(BaseModel):
     margin_free: float
     margin_level: float
     currency: str
+    profit: float = 0.0
+    server: str = ""
+    login: int = 0
+
+
+class HistoryDeal(BaseModel):
+    ticket: int
+    order: int
+    time: int
+    time_msc: int
+    type: str
+    entry: str
+    magic: int
+    position_id: int
+    reason: str
+    volume: float
+    price: float
+    commission: float
+    swap: float
+    profit: float
+    fee: float
+    symbol: str
+    comment: str
+
+
+class HistoryOrder(BaseModel):
+    ticket: int
+    time_setup: int
+    time_setup_msc: int
+    time_done: int
+    time_done_msc: int
+    type: str
+    type_time: str
+    type_filling: str
+    state: str
+    magic: int
+    position_id: int
+    reason: str
+    volume_initial: float
+    volume_current: float
+    price_open: float
+    sl: float
+    tp: float
+    price_current: float
+    price_stoplimit: float
+    symbol: str
+    comment: str
 
 
 # Startup/Shutdown
@@ -138,8 +185,88 @@ async def get_account_info():
         margin=account.margin,
         margin_free=account.margin_free,
         margin_level=account.margin_level if account.margin > 0 else 0,
-        currency=account.currency
+        currency=account.currency,
+        profit=account.profit,
+        server=account.server,
+        login=account.login
     )
+
+
+# History
+@app.get("/history/deals", response_model=List[HistoryDeal])
+async def get_history_deals(days: int = 30):
+    """Get history deals (closed trades) for the last N days"""
+    from_date = datetime.now().timestamp() - (days * 24 * 60 * 60)
+    deals = mt5.history_deals_get(from=from_date, to=datetime.now().timestamp())
+    
+    if deals is None:
+        error = mt5.last_error()
+        if error == (1, 'Success') or error == 1:
+            return []
+        raise HTTPException(status_code=500, detail=f"Failed to get history deals: {error}")
+    
+    return [
+        HistoryDeal(
+            ticket=deal.ticket,
+            order=deal.order,
+            time=deal.time,
+            time_msc=deal.time_msc,
+            type="BUY" if deal.type == mt5.ORDER_TYPE_BUY else "SELL",
+            entry="IN" if deal.entry == mt5.DEAL_ENTRY_IN else "OUT" if deal.entry == mt5.DEAL_ENTRY_OUT else "INOUT",
+            magic=deal.magic,
+            position_id=deal.position_id,
+            reason=str(deal.reason),
+            volume=deal.volume,
+            price=deal.price,
+            commission=deal.commission,
+            swap=deal.swap,
+            profit=deal.profit,
+            fee=deal.fee,
+            symbol=deal.symbol,
+            comment=deal.comment
+        )
+        for deal in deals
+    ]
+
+
+@app.get("/history/orders", response_model=List[HistoryOrder])
+async def get_history_orders(days: int = 30):
+    """Get history orders for the last N days"""
+    from_date = datetime.now().timestamp() - (days * 24 * 60 * 60)
+    orders = mt5.history_orders_get(from=from_date, to=datetime.now().timestamp())
+    
+    if orders is None:
+        error = mt5.last_error()
+        if error == (1, 'Success') or error == 1:
+            return []
+        raise HTTPException(status_code=500, detail=f"Failed to get history orders: {error}")
+    
+    return [
+        HistoryOrder(
+            ticket=order.ticket,
+            time_setup=order.time_setup,
+            time_setup_msc=order.time_setup_msc,
+            time_done=order.time_done,
+            time_done_msc=order.time_done_msc,
+            type="BUY" if order.type == mt5.ORDER_TYPE_BUY else "SELL",
+            type_time=str(order.type_time),
+            type_filling=str(order.type_filling),
+            state=str(order.state),
+            magic=order.magic,
+            position_id=order.position_id,
+            reason=str(order.reason),
+            volume_initial=order.volume_initial,
+            volume_current=order.volume_current,
+            price_open=order.price_open,
+            sl=order.sl,
+            tp=order.tp,
+            price_current=order.price_current,
+            price_stoplimit=order.price_stoplimit,
+            symbol=order.symbol,
+            comment=order.comment
+        )
+        for order in orders
+    ]
 
 
 # Helper Functions
