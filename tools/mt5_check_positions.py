@@ -113,20 +113,30 @@ class MT5CheckPositionsTool:
                         "properties": {}
                     }
                 }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_account_info",
+                    "description": "Get comprehensive account information including balance, equity, margin, open positions, closed trades, and order history - all in one call. Use this to get a complete view of your trading account.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "history_days": {
+                                "type": "integer",
+                                "description": "Number of days of trade history to retrieve (default: 30)"
+                            }
+                        }
+                    }
+                }
             }
         ]
     
     def get_functions(self):
         """Return function mappings for the agent"""
         return {
-            "check_mt5_positions": self.check_positions,
-            "close_mt5_position": self.close_position,
             "close_all_mt5_positions": self.close_all_positions,
-            "close_all_mt5_positions": self.close_all_positions,
-            "get_account_balance": self.get_account_balance,
-            "get_closed_trades": self.get_closed_trades,
-            "get_trade_history": self.get_trade_history,
-            "get_account_stats": self.get_account_stats
+            "get_account_info": self.get_account_info
         }
     
     def check_positions(self, symbol: str = None) -> Dict[str, Any]:
@@ -265,130 +275,37 @@ class MT5CheckPositionsTool:
                 "error": f"Unexpected error: {str(e)}"
             }
 
-    def get_account_balance(self) -> Dict[str, Any]:
+    def get_account_info(self, history_days: int = 30) -> Dict[str, Any]:
         """
-        Get account balance and equity (Legacy wrapper for get_account_stats)
+        Get comprehensive account information in one call
         
+        Args:
+            history_days: Number of days of history to retrieve
+            
         Returns:
-            Dict with account info
-        """
-        return self.get_account_stats()
-
-    def get_account_stats(self) -> Dict[str, Any]:
-        """
-        Get detailed account statistics
-        
-        Returns:
-            Dict with account info
+            Dict with account info, positions, closed trades, and order history
         """
         try:
-            url = f"{self.mt5_api_url}/account/info"
+            url = f"{self.mt5_api_url}/account/comprehensive"
+            params = {"history_days": history_days}
             
-            response = requests.get(url, timeout=10)
+            response = requests.get(url, params=params, timeout=10)
             
             if response.status_code == 200:
                 result = response.json()
                 return {
                     "success": True,
-                    "balance": result.get("balance"),
-                    "equity": result.get("equity"),
-                    "margin": result.get("margin"),
-                    "free_margin": result.get("margin_free"),
-                    "margin_level": result.get("margin_level"),
-                    "profit": result.get("profit"),
-                    "currency": result.get("currency", "USD"),
-                    "server": result.get("server"),
-                    "login": result.get("login")
+                    "account": result.get("account"),
+                    "positions": result.get("positions"),
+                    "closed_trades": result.get("closed_trades"),
+                    "order_history": result.get("order_history"),
+                    "history_days": result.get("history_days")
                 }
             else:
                 error_detail = response.json().get("detail", "Unknown error") if response.text else "No response"
                 return {
                     "success": False,
                     "error": f"Failed to fetch account info: {error_detail}"
-                }
-                
-        except requests.exceptions.ConnectionError:
-            return {
-                "success": False,
-                "error": f"Cannot connect to MT5 API at {self.mt5_api_url}"
-            }
-        except Exception as e:
-            return {
-                "success": False,
-                "error": f"Unexpected error: {str(e)}"
-            }
-
-    def get_closed_trades(self, days: int = 30) -> Dict[str, Any]:
-        """
-        Get closed trades (deals)
-        
-        Args:
-            days: Number of days to look back
-            
-        Returns:
-            Dict with deals list
-        """
-        try:
-            url = f"{self.mt5_api_url}/history/deals"
-            params = {"days": days}
-            
-            response = requests.get(url, params=params, timeout=10)
-            
-            if response.status_code == 200:
-                deals = response.json()
-                return {
-                    "success": True,
-                    "count": len(deals),
-                    "days": days,
-                    "deals": deals
-                }
-            else:
-                error_detail = response.json().get("detail", "Unknown error") if response.text else "No response"
-                return {
-                    "success": False,
-                    "error": f"Failed to fetch closed trades: {error_detail}"
-                }
-                
-        except requests.exceptions.ConnectionError:
-            return {
-                "success": False,
-                "error": f"Cannot connect to MT5 API at {self.mt5_api_url}"
-            }
-        except Exception as e:
-            return {
-                "success": False,
-                "error": f"Unexpected error: {str(e)}"
-            }
-
-    def get_trade_history(self, days: int = 30) -> Dict[str, Any]:
-        """
-        Get trade history (orders)
-        
-        Args:
-            days: Number of days to look back
-            
-        Returns:
-            Dict with orders list
-        """
-        try:
-            url = f"{self.mt5_api_url}/history/orders"
-            params = {"days": days}
-            
-            response = requests.get(url, params=params, timeout=10)
-            
-            if response.status_code == 200:
-                orders = response.json()
-                return {
-                    "success": True,
-                    "count": len(orders),
-                    "days": days,
-                    "orders": orders
-                }
-            else:
-                error_detail = response.json().get("detail", "Unknown error") if response.text else "No response"
-                return {
-                    "success": False,
-                    "error": f"Failed to fetch trade history: {error_detail}"
                 }
                 
         except requests.exceptions.ConnectionError:

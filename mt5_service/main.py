@@ -192,12 +192,116 @@ async def get_account_info():
     )
 
 
+@app.get("/account/comprehensive")
+async def get_comprehensive_account_info(history_days: int = 30):
+    """
+    Get comprehensive account information in one call:
+    - Account info (balance, equity, margin, etc.)
+    - Open positions
+    - Closed trades (deals) from last N days
+    - Order history from last N days
+    """
+    # Get account info
+    account = mt5.account_info()
+    if account is None:
+        raise HTTPException(status_code=500, detail=f"Failed to get account info: {mt5.last_error()}")
+    
+    # Get open positions
+    positions = mt5.positions_get()
+    if positions is None:
+        error = mt5.last_error()
+        if error != (1, 'Success') and error != 1:
+            raise HTTPException(status_code=500, detail=f"Failed to get positions: {error}")
+        positions = []
+    
+    # Get closed trades (deals)
+    date_from = datetime.now().timestamp() - (history_days * 24 * 60 * 60)
+    deals = mt5.history_deals_get(date_from=date_from, date_to=datetime.now().timestamp())
+    if deals is None:
+        error = mt5.last_error()
+        if error != (1, 'Success') and error != 1:
+            raise HTTPException(status_code=500, detail=f"Failed to get history deals: {error}")
+        deals = []
+    
+    # Get order history
+    orders = mt5.history_orders_get(from=date_from, to=datetime.now().timestamp())
+    if orders is None:
+        error = mt5.last_error()
+        if error != (1, 'Success') and error != 1:
+            raise HTTPException(status_code=500, detail=f"Failed to get history orders: {error}")
+        orders = []
+    
+    return {
+        "account": {
+            "balance": account.balance,
+            "equity": account.equity,
+            "margin": account.margin,
+            "margin_free": account.margin_free,
+            "margin_level": account.margin_level if account.margin > 0 else 0,
+            "profit": account.profit,
+            "currency": account.currency,
+            "server": account.server,
+            "login": account.login
+        },
+        "positions": [
+            {
+                "ticket": pos.ticket,
+                "symbol": pos.symbol,
+                "type": "BUY" if pos.type == mt5.ORDER_TYPE_BUY else "SELL",
+                "volume": pos.volume,
+                "price_open": pos.price_open,
+                "price_current": pos.price_current,
+                "profit": pos.profit,
+                "swap": pos.swap,
+                "comment": pos.comment
+            }
+            for pos in positions
+        ],
+        "closed_trades": [
+            {
+                "ticket": deal.ticket,
+                "order": deal.order,
+                "time": deal.time,
+                "type": "BUY" if deal.type == mt5.ORDER_TYPE_BUY else "SELL",
+                "entry": "IN" if deal.entry == mt5.DEAL_ENTRY_IN else "OUT" if deal.entry == mt5.DEAL_ENTRY_OUT else "INOUT",
+                "position_id": deal.position_id,
+                "volume": deal.volume,
+                "price": deal.price,
+                "commission": deal.commission,
+                "swap": deal.swap,
+                "profit": deal.profit,
+                "symbol": deal.symbol,
+                "comment": deal.comment
+            }
+            for deal in deals
+        ],
+        "order_history": [
+            {
+                "ticket": order.ticket,
+                "time_setup": order.time_setup,
+                "time_done": order.time_done,
+                "type": "BUY" if order.type == mt5.ORDER_TYPE_BUY else "SELL",
+                "state": str(order.state),
+                "position_id": order.position_id,
+                "volume_initial": order.volume_initial,
+                "price_open": order.price_open,
+                "sl": order.sl,
+                "tp": order.tp,
+                "symbol": order.symbol,
+                "comment": order.comment
+            }
+            for order in orders
+        ],
+        "history_days": history_days
+    }
+
+
 # History
 @app.get("/history/deals", response_model=List[HistoryDeal])
 async def get_history_deals(days: int = 30):
     """Get history deals (closed trades) for the last N days"""
-    from_date = datetime.now().timestamp() - (days * 24 * 60 * 60)
-    deals = mt5.history_deals_get(from=from_date, to=datetime.now().timestamp())
+    date_from = datetime.now().timestamp() - (days * 24 * 60 * 60)
+    deals = mt5.history_deals_get(date_from=date_from, date_to=datetime.now().timestamp())
     
     if deals is None:
         error = mt5.last_error()

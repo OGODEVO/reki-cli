@@ -230,18 +230,6 @@ Now call these MT5 tools to check your account:
 5. **get_account_balance()** - Check account funds
    - Call this to monitor your growth and ensure you have margin for new trades.
 
-6. **get_account_stats()** - Check detailed account statistics
-   - Call this to monitor your growth, margin, and overall account health.
-   - Returns balance, equity, margin, free margin, margin level, profit, currency, server, and login.
-
-7. **get_closed_trades(days)** - Get closed trades history
-   - days: Number of days to look back (default: 30)
-   - Use this to analyze your past performance and learn from wins/losses.
-
-8. **get_trade_history(days)** - Get order history
-   - days: Number of days to look back (default: 30)
-   - Use this to see order placement and execution details.
-
 === HOW MT5 CLOSING WORKS (CRITICAL UNDERSTANDING) ===
 **You MUST understand this to trade correctly:**
 
