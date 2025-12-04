@@ -171,15 +171,15 @@ def main():
         return
 
     # Specific File Paths
-    log_file_path = base_dir / "trading_2025-12-03.log"
-    json_file_path = base_dir / "history_2025-12-03_22-06-53.json"
+    log_file_path = base_dir / "trading_2025-12-04.log"
+    json_file_path = base_dir / "history_2025-12-04_09-44-17.json"
     
     if not log_file_path.exists() or not json_file_path.exists():
         console.print("[bold red]Error: Target files not found![/bold red]")
         return
 
-    console.print(f"[green]Loading log segment from {log_file_path.name} (Lines 1429-5845)...[/green]")
-    log_segment = load_log_segment(log_file_path, 1429, 5845)
+    console.print(f"[green]Loading log segment from {log_file_path.name} (Lines 1601-3327)...[/green]")
+    log_segment = load_log_segment(log_file_path, 1601, 3327)
     
     console.print(f"[green]Loading history from {json_file_path.name}...[/green]")
     json_history = load_log_file(json_file_path)

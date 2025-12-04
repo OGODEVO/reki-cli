@@ -11,6 +11,8 @@ It is supposed to follow a specific set of rules defined in its System Prompt (p
 === YOUR TASK ===
 Analyze the provided JSON conversation history. This history contains the "thought process" and actions of the agent over a trading session.
 
+CRITICAL: Conduct a deep forensic analysis to determine the root cause of the model's losses. While trading is inherently challenging, we must identify specific mechanisms to control risk and dominate the market. Read between the lines of the provided logs and history to uncover subtle failures in logic or execution.
+
 Output a detailed Markdown report covering the following sections:
 
 ## 1. Executive Summary
