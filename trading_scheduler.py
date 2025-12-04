@@ -29,6 +29,10 @@ from reki.config import config
 # but config module handles its own env vars)
 load_dotenv()
 
+# Track cycle boundaries for rolling summary
+CYCLE_MARKER = "[CYCLE_BOUNDARY]"
+MAX_FULL_CYCLES = 3  # Keep last N full cycles, summarize older ones
+
 def load_trading_prompt():
     """Load the trading system prompt"""
     prompt_path = Path(__file__).parent / config.get("system.paths.system_prompt", "reki/trading_system_prompt.txt")
@@ -171,8 +175,88 @@ def run_trading_cycle(agent, ui):
         error_msg = f"ERROR in trading cycle: {str(e)}"
         ui.console.print(Panel(f"[bold red]{error_msg}[/bold red]", title="[bold red]Error[/bold red]"))
         log_to_file(error_msg)
+    
+    # Add cycle marker for rolling summary tracking
+    agent.messages.append({"role": "system", "content": CYCLE_MARKER})
+    
+    # Apply rolling summary to compress older cycles
+    compress_old_cycles(agent, ui)
 
 import json
+
+def compress_old_cycles(agent, ui):
+    """
+    Compress older cycles into a summary to save tokens.
+    Keeps the last MAX_FULL_CYCLES cycles intact, summarizes older ones.
+    """
+    messages = agent.messages
+    
+    # Find all cycle boundaries
+    cycle_indices = [i for i, m in enumerate(messages) 
+                     if m.get("role") == "system" and m.get("content") == CYCLE_MARKER]
+    
+    # If we have more than MAX_FULL_CYCLES, compress the older ones
+    if len(cycle_indices) <= MAX_FULL_CYCLES:
+        return  # Nothing to compress
+    
+    # Calculate how many cycles to compress
+    cycles_to_compress = len(cycle_indices) - MAX_FULL_CYCLES
+    
+    # Find the index where we start keeping full messages
+    keep_from_index = cycle_indices[cycles_to_compress]
+    
+    # Extract messages to compress (skip system prompt at index 0)
+    system_prompt = messages[0] if messages and messages[0].get("role") == "system" else None
+    start_idx = 1 if system_prompt else 0
+    messages_to_compress = messages[start_idx:keep_from_index]
+    
+    if not messages_to_compress:
+        return
+    
+    # Create a compact summary of compressed cycles
+    summary_parts = []
+    summary_parts.append(f"[SUMMARY OF CYCLES 1-{cycles_to_compress}]")
+    
+    # Extract key decisions from compressed messages
+    for msg in messages_to_compress:
+        content = msg.get("content", "")
+        if isinstance(content, str):
+            # Extract DECISION lines
+            if "DECISION:" in content:
+                for line in content.split("\n"):
+                    if any(key in line for key in ["DECISION:", "SYMBOL:", "ENTRY:", "TP:", "SL:", "REASON:"]):
+                        summary_parts.append(line.strip())
+            # Extract trade execution results
+            if "success" in content.lower() and "ticket" in content.lower():
+                summary_parts.append(f"Trade executed: {content[:200]}..." if len(content) > 200 else content)
+    
+    summary_parts.append("[END SUMMARY]")
+    summary_text = "\n".join(summary_parts)
+    
+    # Rebuild messages: system prompt + summary + recent cycles
+    new_messages = []
+    if system_prompt:
+        new_messages.append(system_prompt)
+    
+    # Add compressed summary as a system message
+    new_messages.append({
+        "role": "system",
+        "content": summary_text
+    })
+    
+    # Add messages from keep_from_index onwards (recent cycles)
+    new_messages.extend(messages[keep_from_index:])
+    
+    # Calculate savings
+    old_count = len(messages)
+    new_count = len(new_messages)
+    
+    # Update agent messages
+    agent.messages = new_messages
+    
+    ui.console.print(f"[dim]📦 Compressed {cycles_to_compress} old cycles ({old_count} → {new_count} messages)[/dim]")
+    log_to_file(f"Compressed {cycles_to_compress} old cycles ({old_count} → {new_count} messages)")
+
 
 def save_history(agent, ui):
     """Save conversation history to file"""

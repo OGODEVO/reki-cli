@@ -25,6 +25,62 @@ from IPython import get_ipython
 from ui import TerminalUI
 from reki.config import config
 
+def summarize_tool_response(function_name: str, response: dict) -> str:
+    """
+    Summarize tool responses to save tokens.
+    Converts verbose JSON arrays into compact summaries.
+    """
+    try:
+        # MACD indicator - extract just the latest values
+        if function_name == "get_macd_indicator" and "data" in response:
+            data = response.get("data", [])
+            if data and len(data) > 0:
+                latest = data[0] if isinstance(data, list) else data
+                return json.dumps({
+                    "macd": round(latest.get("value", 0), 3),
+                    "signal": round(latest.get("signal", 0), 3),
+                    "histogram": round(latest.get("histogram", 0), 3),
+                    "trend": "bullish" if latest.get("histogram", 0) > 0 else "bearish"
+                })
+        
+        # RSI indicator - extract just the latest value
+        if function_name == "get_rsi_indicator" and "data" in response:
+            data = response.get("data", [])
+            if data and len(data) > 0:
+                latest = data[0] if isinstance(data, list) else data
+                value = latest.get("value", 50)
+                zone = "oversold" if value < 30 else "overbought" if value > 70 else "neutral"
+                return json.dumps({"rsi": round(value, 1), "zone": zone})
+        
+        # Minute aggregates - keep only last 5 candles with essential data
+        if function_name == "get_minute_aggregates" and "results" in response:
+            results = response.get("results", [])
+            if results:
+                compact = []
+                for candle in results[-5:]:  # Last 5 candles only
+                    compact.append({
+                        "t": candle.get("t"),
+                        "o": round(candle.get("o", 0), 2),
+                        "h": round(candle.get("h", 0), 2),
+                        "l": round(candle.get("l", 0), 2),
+                        "c": round(candle.get("c", 0), 2)
+                    })
+                return json.dumps({"candles": compact, "count": len(results)})
+        
+        # Account info - already optimized, keep as is
+        if function_name == "get_account_info":
+            return json.dumps(response)
+        
+        # Default: return original but limit size
+        result_str = json.dumps(response)
+        if len(result_str) > 2000:
+            return result_str[:2000] + "...[truncated]"
+        return result_str
+        
+    except Exception:
+        return json.dumps(response)
+
+
 def count_tokens(messages, model="gpt-4"):
     """Return the number of tokens used by a list of messages."""
     try:
@@ -371,7 +427,7 @@ class ChatAgent:
                             "tool_call_id": tool_call.id,
                             "role": "tool",
                             "name": function_name,
-                            "content": json.dumps(function_response),
+                            "content": summarize_tool_response(function_name, function_response),
                         }
                     except Exception as e:
                         error_message = f"Error executing tool {function_name}: {e}"

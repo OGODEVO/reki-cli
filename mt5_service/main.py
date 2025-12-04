@@ -193,13 +193,13 @@ async def get_account_info():
 
 
 @app.get("/account/comprehensive")
-async def get_comprehensive_account_info(history_days: int = 30):
+async def get_comprehensive_account_info(history_days: int = 3, max_trades: int = 10):
     """
     Get comprehensive account information in one call:
     - Account info (balance, equity, margin, etc.)
     - Open positions
-    - Closed trades (deals) from last N days
-    - Order history from last N days
+    - Closed trades (deals) from last N days (limited to max_trades)
+    - Order history from last N days (limited to max_trades)
     """
     # Get account info
     account = mt5.account_info()
@@ -232,6 +232,10 @@ async def get_comprehensive_account_info(history_days: int = 30):
             raise HTTPException(status_code=500, detail=f"Failed to get history orders: {error}")
         orders = []
     
+    # Limit to most recent trades (sorted by time descending, take last N)
+    deals_list = list(deals)[-max_trades:] if deals else []
+    orders_list = list(orders)[-max_trades:] if orders else []
+    
     return {
         "account": {
             "balance": account.balance,
@@ -240,9 +244,7 @@ async def get_comprehensive_account_info(history_days: int = 30):
             "margin_free": account.margin_free,
             "margin_level": account.margin_level if account.margin > 0 else 0,
             "profit": account.profit,
-            "currency": account.currency,
-            "server": account.server,
-            "login": account.login
+            "currency": account.currency
         },
         "positions": [
             {
@@ -252,48 +254,36 @@ async def get_comprehensive_account_info(history_days: int = 30):
                 "volume": pos.volume,
                 "price_open": pos.price_open,
                 "price_current": pos.price_current,
-                "profit": pos.profit,
-                "swap": pos.swap,
-                "comment": pos.comment
+                "profit": pos.profit
             }
             for pos in positions
         ],
         "closed_trades": [
             {
                 "ticket": deal.ticket,
-                "order": deal.order,
                 "time": deal.time,
                 "type": "BUY" if deal.type == mt5.ORDER_TYPE_BUY else "SELL",
                 "entry": "IN" if deal.entry == mt5.DEAL_ENTRY_IN else "OUT" if deal.entry == mt5.DEAL_ENTRY_OUT else "INOUT",
-                "position_id": deal.position_id,
                 "volume": deal.volume,
                 "price": deal.price,
-                "commission": deal.commission,
-                "swap": deal.swap,
                 "profit": deal.profit,
-                "symbol": deal.symbol,
-                "comment": deal.comment
+                "symbol": deal.symbol
             }
-            for deal in deals
+            for deal in deals_list
         ],
         "order_history": [
             {
                 "ticket": order.ticket,
-                "time_setup": order.time_setup,
                 "time_done": order.time_done,
                 "type": "BUY" if order.type == mt5.ORDER_TYPE_BUY else "SELL",
-                "state": str(order.state),
-                "position_id": order.position_id,
                 "volume_initial": order.volume_initial,
                 "price_open": order.price_open,
-                "sl": order.sl,
-                "tp": order.tp,
-                "symbol": order.symbol,
-                "comment": order.comment
+                "symbol": order.symbol
             }
-            for order in orders
+            for order in orders_list
         ],
-        "history_days": history_days
+        "history_days": history_days,
+        "max_trades": max_trades
     }
 
 
