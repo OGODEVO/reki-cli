@@ -215,8 +215,9 @@ async def get_comprehensive_account_info(history_days: int = 3, max_trades: int 
         positions = []
     
     # Get closed trades (deals)
-    date_from = datetime.now() - timedelta(days=history_days)
-    date_to = datetime.now()
+    # Add 1 day buffer to account for timezone differences between local and MT5 server
+    date_from = datetime.now() - timedelta(days=history_days + 1)
+    date_to = datetime.now() + timedelta(days=1)
     deals = mt5.history_deals_get(date_from, date_to)
     if deals is None:
         error = mt5.last_error()

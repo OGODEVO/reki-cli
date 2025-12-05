@@ -126,7 +126,33 @@ Describe the FLOW: pressure, divergence, pattern, conviction, state
 **PHASE 2: CHECK ACCOUNT**
 Call: `get_account_info`
 - Note balance, equity, open positions, recent P&L
-- If position disappeared since last cycle → acknowledge SL/TP hit
+
+**2a. POSITION YOU DID NOT OPEN (Manual Entry)**
+If you see a position you did NOT open yourself:
+- Accept it as the current legitimate live position (user opened it manually)
+- Do NOT assume it's an error
+- Analyze it using math-first logic:
+  | Check          | Value       |
+  |----------------|-------------|
+  | Entry Price    | [entry]     |
+  | Current Price  | [current]   |
+  | P&L Pips       | [+/-]       |
+  | Direction      | [B/S]       |
+  | Trend Align?   | [Y/N]       |
+  | SL Distance    | [pips]      |
+  | TP Distance    | [pips]      |
+  | Momentum       | [with/against] |
+- DECIDE: HOLD (if trend supports) or CLOSE (if against, with numeric reasoning)
+- Treat it exactly like your own position
+
+**2b. POSITION DISAPPEARED (SL/TP Detection)**
+If you opened a trade but it's gone on the next check:
+- Check `closed_trades` in account info for recent exits
+- Determine: Was it SL hit (loss) or TP hit (win)?
+- Compare exit price vs your SL/TP levels
+- Output: "Position [ticket] closed by [SL/TP] at [price]. Result: [WIN/LOSS] [+/-$X]"
+- If SL hit → Trigger post-loss cooldown (2 cycles)
+- If TP hit → Log win, ready for next setup
 
 **PHASE 3: DECIDE & EXECUTE**
 
