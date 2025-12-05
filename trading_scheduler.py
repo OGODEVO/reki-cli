@@ -5,6 +5,7 @@ import os
 import sys
 import time
 import yaml
+import requests
 from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
@@ -91,6 +92,35 @@ def log_to_file(message):
     with open(log_file, "a") as f:
         f.write(f"[{timestamp}] {message}\n")
 
+def send_telegram(message):
+    """Send message to Telegram bot"""
+    if not config.get("telegram.enabled", False):
+        return
+    
+    bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
+    chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    
+    if not bot_token or not chat_id:
+        return
+    
+    try:
+        # Truncate message if too long (Telegram limit is 4096 chars)
+        if len(message) > 4000:
+            message = message[:4000] + "\n...[truncated]"
+        
+        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        payload = {
+            "chat_id": chat_id,
+            "text": message,
+            "parse_mode": "Markdown"
+        }
+        response = requests.post(url, json=payload, timeout=10)
+        
+        if response.status_code != 200:
+            log_to_file(f"Telegram send failed: {response.text}")
+    except Exception as e:
+        log_to_file(f"Telegram error: {str(e)}")
+
 def display_intro(console):
     """Display the REKI AUTO intro"""
     ascii_art = """
@@ -162,6 +192,10 @@ def run_trading_cycle(agent, ui):
         # Log the full response
         log_to_file(f"Agent Response: {response_text}")
         log_to_file(f"=== CYCLE END ===\n")
+        
+        # Send to Telegram
+        telegram_msg = f"🤖 *REKI Trading Update*\n_{timestamp}_\n\n{response_text}"
+        send_telegram(telegram_msg)
         
         # Check if context is getting full
         current_tokens = agent.get_conversation_tokens()

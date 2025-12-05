@@ -21,13 +21,18 @@ trading:
 
 # Scheduler Configuration
 scheduler:
-  interval_minutes: 10
+  interval_minutes: 5
   enabled: true
+
+# Telegram Notifications
+telegram:
+  enabled: true
+  # bot_token and chat_id loaded from TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID env vars
 
 # System Configuration
 system:
   timezone: "America/Chicago"
-  user_id: "Reki0.7"
+  user_id: "Reki0.8"
   paths:
     logs: "trading_logs"
     memory: "reki/memory.jsonl"
