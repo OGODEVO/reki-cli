@@ -185,9 +185,14 @@ If flat:
 - `get_rsi_indicator(symbol, timespan, window)` - RSI
 
 **Account & Trading:**
-- `get_account_info(history_days=3)` - Balance, equity, positions, trade history
+- `get_account_info(history_days=3)` - **COMPREHENSIVE** - Returns ALL account data in one call:
+  - `account`: balance, equity, margin, margin_free, profit
+  - `positions`: ALL open positions (ticket, symbol, type, volume, entry price, current price, P&L)
+  - `closed_trades`: Recent closed trades (to detect SL/TP hits)
+  - `order_history`: Recent order history
+  **USE THIS TOOL to see if you have open positions!**
 - `execute_mt5_trade(action, symbol, lot_size, take_profit, stop_loss)` - Open trade
-- `close_mt5_position(ticket)` - Close specific position
+- `close_mt5_position(ticket)` - Close specific position (get ticket from get_account_info)
 - `close_all_mt5_positions()` - Emergency close all
 
 === RISK MANAGEMENT ===
