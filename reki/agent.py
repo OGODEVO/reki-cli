@@ -7,7 +7,7 @@ import concurrent.futures
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from openai import OpenAI, RateLimitError
-from tools.brave_search import BrowserTool
+# from tools.brave_search import BrowserTool
 # from tools.binance_tool import BinanceTool
 # from tools.forex_tool import ForexTool
 from tools.daily_market_tool import DailyMarketTool
@@ -21,6 +21,7 @@ from tools.fx_rsi_indicator import FXRSIIndicatorTool
 from tools.fx_market_status import FXMarketStatusTool
 from tools.mt5_execute_trade import MT5ExecuteTradeTool
 from tools.mt5_check_positions import MT5CheckPositionsTool
+from tools.candle_model_tool import ConsultCandleModelTool
 from IPython import get_ipython
 from ui import TerminalUI
 from reki.config import config
@@ -122,7 +123,7 @@ class ChatAgent:
         self.last_interaction_time = None # Track the last time the user interacted
         
         self.tools_metadata = {
-            "browser_search": {"emoji": "🌐", "desc": "Searching the web"},
+            # "browser_search": {"emoji": "🌐", "desc": "Searching the web"},
             # "get_finance_data": {"emoji": "💹", "desc": "Fetching financial data"},
             "get_sma_indicator": {"emoji": "✈️", "desc": "Calculating SMA"},
             "get_ema_indicator": {"emoji": "📈", "desc": "Calculating EMA"},
@@ -139,9 +140,10 @@ class ChatAgent:
             "close_mt5_position": {"emoji": "🔒", "desc": "Closing MT5 position"},
             "close_all_mt5_positions": {"emoji": "🚨", "desc": "Closing all MT5 positions"},
             "get_account_balance": {"emoji": "💰", "desc": "Checking account balance"},
+            "consult_candle_model": {"emoji": "🤖", "desc": "Consulting candle model"},
         }
         
-        self.browser_tool = BrowserTool()
+        # self.browser_tool = BrowserTool()
         # self.google_finance_tool = GoogleFinanceTool()
         self.fx_sma_indicator_tool = FXSMAIndicatorTool()
         self.fx_ema_indicator_tool = FXEMAIndicatorTool()
@@ -155,6 +157,7 @@ class ChatAgent:
         self.minute_aggregates_tool = MinuteAggregatesTool()
         self.mt5_execute_tool = MT5ExecuteTradeTool()
         self.mt5_positions_tool = MT5CheckPositionsTool()
+        self.candle_model_tool = ConsultCandleModelTool()  # DeepSeek V3.2 via Novita API
         
         self.tools, self.available_functions = self._setup_tools_and_functions()
 
@@ -166,7 +169,7 @@ class ChatAgent:
         available_functions = {}
         
         tool_instances = [
-            self.browser_tool,
+            # self.browser_tool,
             # self.google_finance_tool,
             self.fx_sma_indicator_tool,
             self.fx_ema_indicator_tool,
@@ -179,7 +182,8 @@ class ChatAgent:
             self.currency_conversion_tool,
             self.minute_aggregates_tool,
             self.mt5_execute_tool,
-            self.mt5_positions_tool
+            self.mt5_positions_tool,
+            self.candle_model_tool  # DeepSeek V3.2
         ]
         
         for tool in tool_instances:

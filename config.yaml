@@ -4,13 +4,13 @@
 api:
   openai:
     base_url: "https://api.openai.com/v1"
-    model: "gpt-5-1"  # Default model
+    model: "gpt-5.1"  # Default model
     # api_key is loaded from OPENAI_API_KEY environment variable
 
 # Trading Configuration
 trading:
   mt5:
-    api_url: "http://localhost:8000"  # Default to localhost, override with MT5_API_URL env var
+    api_url: "http://185.202.236.27:8000"  # External MT5 service
   
   symbols: ["XAUUSD"]
   
@@ -23,6 +23,15 @@ trading:
 scheduler:
   interval_minutes: 5
   enabled: true
+  currency_conversion:
+    enabled: true
+
+candle_model:
+  enabled: true
+  url: "https://api.novita.ai/openai/v1/chat/completions"
+  model: "deepseek/deepseek-v3.2"
+  timeout: 30.0
+  # api_key loaded from NOVITA_API_KEY environment variable
 
 # Telegram Notifications
 telegram:

@@ -161,9 +161,25 @@ def run_trading_cycle(agent, ui):
     
     log_to_file(f"=== CYCLE START ===")
     
+    # Fetch current price before calling the agent
+    current_price = "Unknown"
+    try:
+        from tools.minute_aggregates_tool import MinuteAggregatesTool
+        price_tool = MinuteAggregatesTool()
+        from datetime import timedelta
+        now = datetime.now()
+        from_date = (now - timedelta(minutes=5)).strftime("%Y-%m-%d")
+        to_date = now.strftime("%Y-%m-%d")
+        price_data = price_tool.get_minute_aggregates("C:XAUUSD", "minute", 1, from_date, to_date)
+        if price_data and "results" in price_data and len(price_data["results"]) > 0:
+            last_candle = price_data["results"][-1]
+            current_price = last_candle.get("c", "Unknown")
+    except Exception as e:
+        log_to_file(f"Price fetch error: {e}")
+    
     # The trading prompt is already in the agent's system_prompt
-    # We just need to trigger the agent to analyze
-    user_message = "Analyze current market conditions and execute trades if appropriate."
+    # Include current price in the trigger message
+    user_message = f"**CURRENT PRICE: {current_price}**\n\nAnalyze current market conditions and execute trades if appropriate."
     
     try:
         # Get agent response (agent will use tools and potentially execute trades)
