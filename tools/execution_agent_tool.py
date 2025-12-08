@@ -1,6 +1,5 @@
 """
-Execution Agent Tool - Passes trade decisions to DeepSeek which executes via MT5 API
-The main agent (Gemini) makes the decision, DeepSeek handles execution.
+Execution Agent Tool - Passes trades to DeepSeek for execution via MT5 API
 """
 import json
 import os
@@ -9,55 +8,72 @@ from typing import Dict, Any, List
 from reki.config import config
 
 
+# System prompt for the DeepSeek execution agent
+EXECUTION_SYSTEM_PROMPT = """You are a TRADE EXECUTION AGENT for XAUUSD (Gold) on MT5.
+
+You will receive a trade decision from the main trading agent. Your job is to EXECUTE it immediately.
+
+WHAT YOU WILL RECEIVE:
+- ACTION: BUY or SELL
+- SYMBOL: XAUUSD
+- LOT_SIZE: 0.01
+- TAKE_PROFIT: price like 4196.50
+- STOP_LOSS: price like 4188.50
+
+WHAT YOU MUST DO:
+1. Call the execute_mt5_order tool IMMEDIATELY
+2. Pass the EXACT parameters you received
+3. Do not analyze, question, or modify anything
+
+SYMBOL: Always use "XAUUSD" exactly as given.
+
+YOU MUST CALL THE TOOL. DO NOT RESPOND WITH TEXT."""
+
+
 class ExecutionAgentTool:
     """
-    Execution agent that receives trade commands from the main agent,
-    passes them to DeepSeek V3.2, which then executes via MT5 API.
+    Passes trade commands to DeepSeek which executes via MT5.
     """
     
     def __init__(self):
-        # DeepSeek API config (via Novita)
-        self.deepseek_url = config.get("candle_model.url", "https://api.novita.ai/openai/v1/chat/completions")
-        self.deepseek_model = config.get("candle_model.model", "deepseek/deepseek-v3.2")
+        # DeepSeek API config
+        self.deepseek_url = config.get("candle_model.url", "https://api.novita.ai/v3/openai/chat/completions")
+        self.deepseek_model = config.get("candle_model.model", "deepseek/deepseek_v3")
         self.api_key = os.environ.get("NOVITA_API_KEY", "")
         
-        # MT5 API config (for DeepSeek to call)
+        # MT5 API config
         self.mt5_api_url = config.get("trading.mt5.api_url", "http://185.202.236.27:8000")
-        self.timeout = config.get("execution_agent.timeout", 30.0)
+        self.timeout = 30.0
 
     def get_tools(self) -> List[Dict[str, Any]]:
         return [{
             "type": "function",
             "function": {
                 "name": "execute_trade_via_agent",
-                "description": "Execute a trade through the DeepSeek execution agent. Pass your trade decision and the agent will execute it via MT5.",
+                "description": "Execute a BUY or SELL trade via the execution agent. The agent will place the order on MT5.",
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "action": {
                             "type": "string",
                             "enum": ["BUY", "SELL"],
-                            "description": "Trade direction: BUY (long) or SELL (short)"
+                            "description": "BUY or SELL"
                         },
                         "symbol": {
                             "type": "string",
-                            "description": "Trading symbol (e.g., 'XAUUSD')"
+                            "description": "Symbol - use XAUUSD"
                         },
                         "lot_size": {
                             "type": "number",
-                            "description": "Position size in lots (default 0.01)"
+                            "description": "Lot size - use 0.01"
                         },
                         "take_profit": {
                             "type": "number",
-                            "description": "Take profit price level"
+                            "description": "Take profit price"
                         },
                         "stop_loss": {
                             "type": "number",
-                            "description": "Stop loss price level"
-                        },
-                        "reason": {
-                            "type": "string",
-                            "description": "Brief reason for the trade"
+                            "description": "Stop loss price"
                         }
                     },
                     "required": ["action", "symbol", "lot_size", "take_profit", "stop_loss"]
@@ -76,38 +92,32 @@ class ExecutionAgentTool:
         symbol: str,
         lot_size: float,
         take_profit: float,
-        stop_loss: float,
-        reason: str = ""
+        stop_loss: float
     ) -> Dict[str, Any]:
         """
-        Pass trade decision to DeepSeek, which executes via MT5.
+        Pass trade to DeepSeek for execution.
         """
         if not self.api_key:
-            return {"error": "NOVITA_API_KEY environment variable not set."}
+            return {"error": "NOVITA_API_KEY not set"}
 
         try:
-            # Build the execution prompt for DeepSeek
-            execution_prompt = f"""You are a trade execution agent. Execute the following trade via the MT5 API.
+            # Build user message with trade command
+            user_message = f"""EXECUTE THIS TRADE NOW:
 
-TRADE COMMAND:
-- Action: {action}
-- Symbol: {symbol}
-- Lot Size: {lot_size}
-- Take Profit: {take_profit}
-- Stop Loss: {stop_loss}
-- Reason: {reason or 'N/A'}
+ACTION: {action}
+SYMBOL: {symbol}
+LOT_SIZE: {lot_size}
+TAKE_PROFIT: {take_profit}
+STOP_LOSS: {stop_loss}
 
-MT5 API URL: {self.mt5_api_url}
-Endpoint: /order/buy (for BUY) or /order/sell (for SELL)
+Call execute_mt5_order with these exact values."""
 
-Execute this trade NOW by calling the execute_mt5_order tool with the parameters above."""
-
-            # Define the MT5 execution tool for DeepSeek
-            mt5_tools = [{
+            # Tool definition for DeepSeek
+            mt5_tool = {
                 "type": "function",
                 "function": {
                     "name": "execute_mt5_order",
-                    "description": "Execute an order on MT5",
+                    "description": "Place order on MT5",
                     "parameters": {
                         "type": "object",
                         "properties": {
@@ -120,19 +130,19 @@ Execute this trade NOW by calling the execute_mt5_order tool with the parameters
                         "required": ["action", "symbol", "lot_size", "take_profit", "stop_loss"]
                     }
                 }
-            }]
+            }
 
             # Call DeepSeek
             payload = {
                 "model": self.deepseek_model,
                 "messages": [
-                    {"role": "system", "content": "You are a trade execution agent. When given a trade command, immediately execute it using the execute_mt5_order tool. Do not hesitate or ask questions."},
-                    {"role": "user", "content": execution_prompt}
+                    {"role": "system", "content": EXECUTION_SYSTEM_PROMPT},
+                    {"role": "user", "content": user_message}
                 ],
-                "tools": mt5_tools,
+                "tools": [mt5_tool],
                 "tool_choice": "auto",
-                "temperature": 0.1,
-                "max_tokens": 500
+                "temperature": 0.0,
+                "max_tokens": 200
             }
 
             headers = {
@@ -146,40 +156,38 @@ Execute this trade NOW by calling the execute_mt5_order tool with the parameters
             result = response.json()
             message = result['choices'][0]['message']
             
-            # Check if DeepSeek made a tool call
+            # Check for tool call
             if message.get('tool_calls'):
                 tool_call = message['tool_calls'][0]
                 tool_args = json.loads(tool_call['function']['arguments'])
                 
-                # Now execute the actual MT5 API call
-                return self._execute_mt5_order(
+                # Execute on MT5
+                return self._call_mt5(
                     action=tool_args.get('action', action),
                     symbol=tool_args.get('symbol', symbol),
                     lot_size=tool_args.get('lot_size', lot_size),
                     take_profit=tool_args.get('take_profit', take_profit),
-                    stop_loss=tool_args.get('stop_loss', stop_loss),
-                    reason=reason
+                    stop_loss=tool_args.get('stop_loss', stop_loss)
                 )
             else:
-                # DeepSeek didn't make a tool call, execute directly
-                return self._execute_mt5_order(action, symbol, lot_size, take_profit, stop_loss, reason)
+                # DeepSeek didn't call tool - execute directly
+                return self._call_mt5(action, symbol, lot_size, take_profit, stop_loss)
                 
         except requests.exceptions.RequestException as e:
-            return {"error": f"Failed to contact DeepSeek API: {str(e)}"}
+            return {"error": f"DeepSeek API error: {str(e)}"}
         except Exception as e:
             return {"error": f"Error: {str(e)}"}
 
-    def _execute_mt5_order(
+    def _call_mt5(
         self,
         action: str,
         symbol: str,
         lot_size: float,
         take_profit: float,
-        stop_loss: float,
-        reason: str = ""
+        stop_loss: float
     ) -> Dict[str, Any]:
         """
-        Actually execute the MT5 order via API.
+        Execute the actual MT5 API call.
         """
         try:
             endpoint = "/order/buy" if action.upper() == "BUY" else "/order/sell"
@@ -189,8 +197,7 @@ Execute this trade NOW by calling the execute_mt5_order tool with the parameters
                 "symbol": symbol,
                 "lot_size": lot_size,
                 "take_profit": take_profit,
-                "stop_loss": stop_loss,
-                "comment": f"Reki: {reason[:50]}" if reason else "Reki Auto Trade"
+                "stop_loss": stop_loss
             }
             
             response = requests.post(url, json=payload, timeout=15)
@@ -199,7 +206,7 @@ Execute this trade NOW by calling the execute_mt5_order tool with the parameters
                 result = response.json()
                 return {
                     "success": True,
-                    "message": f"{action} order executed successfully via DeepSeek agent",
+                    "message": f"{action} executed via DeepSeek agent",
                     "ticket": result.get("ticket"),
                     "symbol": result.get("symbol"),
                     "price": result.get("price"),
@@ -208,16 +215,11 @@ Execute this trade NOW by calling the execute_mt5_order tool with the parameters
                     "stop_loss": result.get("stop_loss")
                 }
             else:
-                error_detail = response.json().get("detail", "Unknown error") if response.text else "No response"
-                return {
-                    "success": False,
-                    "error": f"Trade execution failed: {error_detail}",
-                    "status_code": response.status_code
-                }
+                try:
+                    error_detail = response.json().get("detail", "Unknown")
+                except:
+                    error_detail = response.text
+                return {"success": False, "error": f"MT5 error: {error_detail}"}
                 
-        except requests.exceptions.ConnectionError:
-            return {"success": False, "error": f"Cannot connect to MT5 API at {self.mt5_api_url}"}
-        except requests.exceptions.Timeout:
-            return {"success": False, "error": "Request to MT5 API timed out"}
         except Exception as e:
-            return {"success": False, "error": f"Unexpected error: {str(e)}"}
+            return {"success": False, "error": f"MT5 connection error: {str(e)}"}
