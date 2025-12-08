@@ -21,7 +21,7 @@ from tools.fx_rsi_indicator import FXRSIIndicatorTool
 from tools.fx_market_status import FXMarketStatusTool
 from tools.mt5_execute_trade import MT5ExecuteTradeTool
 from tools.mt5_check_positions import MT5CheckPositionsTool
-from tools.candle_model_tool import ConsultCandleModelTool
+from tools.execution_agent_tool import ExecutionAgentTool
 from IPython import get_ipython
 from ui import TerminalUI
 from reki.config import config
@@ -140,7 +140,7 @@ class ChatAgent:
             "close_mt5_position": {"emoji": "🔒", "desc": "Closing MT5 position"},
             "close_all_mt5_positions": {"emoji": "🚨", "desc": "Closing all MT5 positions"},
             "get_account_balance": {"emoji": "💰", "desc": "Checking account balance"},
-            "consult_candle_model": {"emoji": "🤖", "desc": "Consulting candle model"},
+            "execute_trade_via_agent": {"emoji": "🤖", "desc": "Executing trade via agent"},
         }
         
         # self.browser_tool = BrowserTool()
@@ -157,7 +157,7 @@ class ChatAgent:
         self.minute_aggregates_tool = MinuteAggregatesTool()
         self.mt5_execute_tool = MT5ExecuteTradeTool()
         self.mt5_positions_tool = MT5CheckPositionsTool()
-        self.candle_model_tool = ConsultCandleModelTool()  # DeepSeek V3.2 via Novita API
+        self.execution_agent_tool = ExecutionAgentTool()  # Trade execution via MT5 API
         
         self.tools, self.available_functions = self._setup_tools_and_functions()
 
@@ -183,7 +183,7 @@ class ChatAgent:
             self.minute_aggregates_tool,
             self.mt5_execute_tool,
             self.mt5_positions_tool,
-            self.candle_model_tool  # DeepSeek V3.2
+            self.execution_agent_tool  # Trade execution agent
         ]
         
         for tool in tool_instances:
