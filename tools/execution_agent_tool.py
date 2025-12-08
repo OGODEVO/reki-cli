@@ -17,8 +17,8 @@ class ExecutionAgentTool:
     
     def __init__(self):
         # DeepSeek API config (via Novita)
-        self.deepseek_url = config.get("candle_model.url", "https://api.novita.ai/v3/openai/chat/completions")
-        self.deepseek_model = config.get("candle_model.model", "deepseek/deepseek_v3")
+        self.deepseek_url = config.get("candle_model.url", "https://api.novita.ai/openai/v1/chat/completions")
+        self.deepseek_model = config.get("candle_model.model", "deepseek/deepseek-v3.2")
         self.api_key = os.environ.get("NOVITA_API_KEY", "")
         
         # MT5 API config (for DeepSeek to call)
@@ -130,7 +130,7 @@ Execute this trade NOW by calling the execute_mt5_order tool with the parameters
                     {"role": "user", "content": execution_prompt}
                 ],
                 "tools": mt5_tools,
-                "tool_choice": {"type": "function", "function": {"name": "execute_mt5_order"}},
+                "tool_choice": "auto",
                 "temperature": 0.1,
                 "max_tokens": 500
             }

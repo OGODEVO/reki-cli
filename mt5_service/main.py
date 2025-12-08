@@ -556,6 +556,9 @@ async def place_buy_order(order: OrderRequest):
     
     result = mt5.order_send(request)
     
+    if result is None:
+        raise HTTPException(status_code=500, detail=f"Order failed: order_send returned None. MT5 error: {mt5.last_error()}. Check if AutoTrading is enabled and MT5 is connected.")
+    
     if result.retcode != mt5.TRADE_RETCODE_DONE:
         raise HTTPException(status_code=400, detail=f"Order failed: {result.comment} (code: {result.retcode})")
     
@@ -601,6 +604,9 @@ async def place_sell_order(order: OrderRequest):
     }
     
     result = mt5.order_send(request)
+    
+    if result is None:
+        raise HTTPException(status_code=500, detail=f"Order failed: order_send returned None. MT5 error: {mt5.last_error()}. Check if AutoTrading is enabled and MT5 is connected.")
     
     if result.retcode != mt5.TRADE_RETCODE_DONE:
         raise HTTPException(status_code=400, detail=f"Order failed: {result.comment} (code: {result.retcode})")
