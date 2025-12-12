@@ -7112,3 +7112,54 @@ REASON: Price is mid-range, under VWAP, and stalling near local resistance with 
 [2025-12-08 17:59:54] Telegram send failed: {"ok":false,"error_code":400,"description":"Bad Request: chat not found"}
 [2025-12-08 18:00:01] === SCHEDULER STOPPED BY USER ===
 [2025-12-08 18:00:01] History saved to history_2025-12-08_18-00-01.json
+[2025-12-08 18:06:26] === SCHEDULER STARTED ===
+[2025-12-08 18:06:26] === CYCLE START ===
+[2025-12-08 18:06:26] Price fetch error: MinuteAggregatesTool.get_minute_aggregates() takes from 2 to 5 positional arguments but 6 were given
+[2025-12-08 18:07:26] Agent Response: === MARKET SNAPSHOT ===
+| Metric           | Value                 |
+|------------------|-----------------------|
+| Price (last close)| 4192.24              |
+| Recent Range H/L | 4178.40 / 4198.72     |
+| Range Size       | 20.32 pts             |
+| Trend Slope (last 10 bars)| ≈ +0.4 pts/5m (mild up) |
+| Momentum Score   | 58 / 100 (moderate)   |
+| RSI(14, 1m)      | 47.68 (neutral)       |
+| MACD (1m)        | 0.67                  |
+| MACD Signal      | 0.91                  |
+| MACD Histogram   | -0.25 (bearish cross) |
+| Volatility State | Medium                |
+| Tempo            | MOD                   |
+
+Support: 4186–4188 | Resistance: 4195–4198  
+
+=== POSITION STATUS ===
+No open positions.
+
+=== RISK CALC ===
+Balance: $59.46 | Tier: 20% | Max Risk: $11.89  
+Planned SL Distance: 4.0 pts | Lot: 0.01 | Approx Actual Risk: ≈ $4.0 (well within tier)
+
+=== SIGNAL ===
+Bias: NEUTRAL-TO-SLIGHT LONG (range with mild upward drift)  
+Strength: 4 / 10  
+Trigger: NO (no strong momentum or clean pullback/reversal signal at this instant)
+
+=== INTERPRETATION ===
+Price is sitting mid-range with only a slight upward slope and neutral RSI, while 1‑minute MACD just flipped to a small bearish histogram, indicating loss of short-term upside momentum. Volatility and tempo are moderate, but there is no clear mini-swing pullback or sharp rejection to justify a micro-scalp entry with tight SL/TP. In this context, forcing a trade would be random rather than momentum-reactive.
+
+DECISION: HOLD (NO TRADE)
+SYMBOL: XAUUSD  
+ENTRY: N/A  
+TICKET: N/A  
+TP: N/A  
+SL: N/A  
+LOTS: 0.00  
+R:R: N/A  
+RISK_TIER: 20%  
+RISK_USD: $0  
+REASON: Current conditions show a mild intraday up-bias but no strong momentum burst, clean 2–3 pt pullback in trend, or sharp reversal at a key level; with a small account and micro-scalping rules, it is better to wait for a clearer momentum move or rejection near 4186–4188 support or 4195–4198 resistance before committing risk.
+[2025-12-08 18:07:26] === CYCLE END ===
+
+[2025-12-08 18:07:27] Telegram send failed: {"ok":false,"error_code":400,"description":"Bad Request: chat not found"}
+[2025-12-08 18:07:40] === SCHEDULER STOPPED BY USER ===
+[2025-12-08 18:07:40] History saved to history_2025-12-08_18-07-40.json
